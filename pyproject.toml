@@ -1,0 +1,37 @@
+[project]
+name = "grantsai-contracts"
+version = "0.1.0"
+description = "Grants AI Contracts Module - Ingestion and Matching Service"
+authors = [
+    {name = "Grants AI Team", email = "dev@grantsai.co.uk"},
+]
+dependencies = [
+    "fastapi>=0.110.0",
+    "uvicorn>=0.27.0",
+    "sqlalchemy>=2.0.27",
+    "alembic>=1.13.1",
+    "psycopg2-binary>=2.9.9",
+    "pgvector>=0.2.5",
+    "azure-storage-blob>=12.19.0",
+    "requests>=2.31.0",
+    "tenacity>=8.2.3",
+    "pydantic>=2.6.1",
+    "pydantic-settings>=2.2.1",
+    "httpx>=0.26.0",
+    "python-multipart>=0.0.9",
+    "openai>=1.12.0",  # For DeepSeek via OpenRouter (uses OpenAI client)
+]
+requires-python = ">=3.11"
+readme = "README.md"
+license = {text = "Proprietary"}
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
