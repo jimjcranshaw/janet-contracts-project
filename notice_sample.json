@@ -1,0 +1,702 @@
+{
+  "id": "013653-2026",
+  "tag": [
+    "tender"
+  ],
+  "date": "2026-02-13T19:05:42Z",
+  "ocid": "ocds-h6vhtk-0599ce",
+  "buyer": {
+    "id": "GB-PPON-PXJP-9994-BJBR",
+    "name": "Southern Housing"
+  },
+  "tender": {
+    "id": "ocds-h6vhtk-0599ce",
+    "lots": [
+      {
+        "id": "1",
+        "title": "Corporate, Governance & Finance",
+        "value": {
+          "currency": "GBP",
+          "amountGross": 7950000.0
+        },
+        "status": "active",
+        "renewal": {
+          "description": "Option to extend for a period, or periods, of up to twelve months to \n31st August 2030"
+        },
+        "hasRenewal": true,
+        "description": "The organisations appointed shall provide legal advisory services to the HALA Members in relation to Corporate, Governance & Finance work for which the HALA Members require legal input, including but not limited to:\nCORPORATE:\n\u2022Acquisitions and disposals\n\u2022Stock transfers\n\u2022New business opportunities\n\u2022Amalgamations and restructuring\n\u2022Joint ventures and subsidiaries\n\u2022Corporate Policies and Procedures\n\u2022Cyber-security and cyber attacks\nIT and information law:\n\u2022Data Protection\n\u2022System maintenance & support agreements\n\u2022Defamation and the internet\n\u2022Intellectual property\nContracts and Procurement:\n\u2022Commercial contracts (including Supporting People contracts)\n\u2022Commercial Disputes\n\u2022Dispute Resolution and Mediation\n\u2022Procurement law\nGOVERNANCE:\n\u2022Code of Governance\n\u2022Corporate Governance\n\u2022Constitutional Reviews\n\u2022Board member powers and responsibility\n\u2022Regulations\n\u2022Company Law\n\u2022Charity Law\n\u2022Registered Provider Registration and PFI\n\u2022Industrial and Provident Society Law\n\u2022Care Quality Commission advice\nFINANCE:\n\u2022Banking and Finance including:\n    o Raising of bank funding\n    o Capital markets issuance and hedging arrangements\n    o Development draw-down funding (including contracts with the HCA / GLA)\n    o Grant applications e.g. Big Lottery funding\n    o Charging and security work\n    o Taxation advice\n\u2022Debt recovery advice\n\u2022Miscellaneous advice such as occasional advice on such matters as Financial inclusion/general advice to tenants,\nconsumer credit license issues, health & safety, building safety, defamation, fraud, insolvency, judicial reviews and\npublic law issues including Human Rights Act.\nEMPLOYMENT:\n\u2022General employment law advice\nThe Lot descriptions are not exhaustive. If the HALA Members and/or OCBs instruct the appointed organisations on matters not explicitly listed within the Lot description, the applicable Framework hourly rates or Fixed Fee, along with the terms of the Framework Agreement, will continue to apply and govern the charges.",
+        "suitability": {
+          "sme": true
+        },
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Quality",
+              "type": "quality",
+              "numbers": [
+                {
+                  "number": 65,
+                  "weight": "percentageExact"
+                }
+              ]
+            },
+            {
+              "name": "Price",
+              "type": "price",
+              "numbers": [
+                {
+                  "number": 35,
+                  "weight": "percentageExact"
+                }
+              ]
+            }
+          ]
+        },
+        "contractPeriod": {
+          "endDate": "2029-08-31T23:59:59+01:00",
+          "startDate": "2026-09-01T00:00:00+01:00",
+          "maxExtentDate": "2030-08-31T23:59:59+01:00"
+        }
+      },
+      {
+        "id": "2",
+        "title": "Housing & Asset Management",
+        "value": {
+          "currency": "GBP",
+          "amountGross": 33160000.0
+        },
+        "status": "active",
+        "renewal": {
+          "description": "Option to extend for a period, or periods, of up to twelve months to 31st August 2030"
+        },
+        "hasRenewal": true,
+        "description": "The organisations appointed shall provide legal advisory services to the HALA Members in relation to Housing & Asset Management work for which the HALA Members require legal input, including but not limited to:\nASSET MANAGEMENT:\n\u2022 Disrepair claims\n\u2022 Gas servicing and other access injunctions\n\u2022 Dilapidations\nGENERAL HOUSING ADVICE, SUCH AS:\n\u2022 Tenancy agreement advice\n\u2022 Anti-social behaviour advice, including domestic abuse advice\n\u2022 Housing benefit advice\n\u2022 Service charge advice\n\u2022 Supported and sheltered housing advice\n\u2022 Estate management board advice\n\u2022 Advice on complaints\n\u2022 Judicial Review\n\u2022 Welfare reform updates\nHOUSING MANAGEMENT POLICY ADVICE, SUCH AS:\n\u2022 Drafting and advising on new forms of tenancy and licence agreement\n\u2022 Rent setting advice\n\u2022 Policy drafting, approval and annual health checks\n\u2022 Advice on procedures \u2013 this may include drafting all or part of a procedure\nHOUSING LITIGATION, SUCH AS:\n\u2022 First Tier Tribunal advice and advocacy\n\u2022 Anti-social behaviour proceedings (including injunctions, committal)\n\u2022 Possession succession\n\u2022 Possession proceedings (all types), including:\n    o Rent arrears procession proceedings\n    o Non-rent arrears possession proceedings\n    o Assured shorthold accelerated possession claims\n    o Terminating licence agreements and obtaining possession\n\u2022 Unlawful assignments\n\u2022 Trespassers\n\u2022 Tenancy Fraud\n\u2022 Evictions\n\u2022 Enforcement / forfeiture\n\u2022 Supported housing disputes\n\u2022 Service charge disputes\n\u2022 Dispute Resolution and Mediation\nLEASEHOLDS:\n\u2022 Data protection\n\u2022 Energy supply agreements with residents\n\u2022 Building Safety Act advice and assistance\n\u2022 Managing agents contracts and service level agreements\n\u2022 Leaseholder disputes\n\u2022 Heat networks\n\u2022 Leasehold and shared ownership sub-letting\n\u2022 Deceased leaseholders where executors not meeting their obligations or where no monies in estate\n\u2022 Managing Agent issues including those arising from Tri-Partite agreements i.e. RP, Leaseholder and Managing Agent\n\u2022 Service charge issues (including sinking fund disputes)\n\u2022 Leasehold Valuation Tribunal advice and advocacy\nThe Lot descriptions are not exhaustive. If the HALA Members and/or OCBs instruct the appointed organisations on matters not explicitly listed within the Lot description, the applicable Framework hourly rates or Fixed Fee, along with the terms of the Framework Agreement, will continue to apply and govern the charges",
+        "suitability": {
+          "sme": true
+        },
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Quality",
+              "type": "quality",
+              "numbers": [
+                {
+                  "number": 50,
+                  "weight": "percentageExact"
+                }
+              ]
+            },
+            {
+              "name": "Price",
+              "type": "price",
+              "numbers": [
+                {
+                  "number": 50,
+                  "weight": "percentageExact"
+                }
+              ]
+            }
+          ]
+        },
+        "contractPeriod": {
+          "endDate": "2029-08-31T23:59:59+01:00",
+          "startDate": "2026-09-01T00:00:00+01:00",
+          "maxExtentDate": "2030-08-31T23:59:59+01:00"
+        }
+      },
+      {
+        "id": "3",
+        "title": "Development",
+        "value": {
+          "currency": "GBP",
+          "amountGross": 17020000.0
+        },
+        "status": "active",
+        "renewal": {
+          "description": "Option to extend for a period, or periods, of up to twelve months to \n31st August 2030"
+        },
+        "hasRenewal": true,
+        "description": "The organisations appointed shall provide legal advisory services to the HALA Members in relation to Development work for which the HALA Members require legal input, including but not limited to:\nPLANNING:\n\u2022 Planning advice\n\u2022 Planning Agreements e.g. s.106 and s.111\nDEVELOPMENT:\n\u2022 Establishing development-related management companies including joint ventures\n\u2022 Governance structures, in relation to Development / Joint Ventures\n\u2022 Public private partnerships\n\u2022 Development Funding (including HCA Help to Buy agreements)\n\u2022 PFIs, including procurement for school PFIs\n\u2022 Procurement advice\n\u2022 Frameworks for consultants and contractors\n\u2022 Consultant appointment letters\n\u2022 Compulsory Purchase Orders\n\u2022 Acquisitions/disposals of land/buildings\n\u2022 Acquisitions/disposals of tenanted stock\n\u2022 Statutory Agreements e.g. s.38. 278, 104\n\u2022 Development Agreements\n\u2022 Construction Agreements (including collateral warranties)\n\u2022 Grant agreements\n\u2022 Management Agreements\n\u2022Novation agreements\n\u2022 Parent Company Guarantees\n\u2022 Wayleaves and other utility agreements\n\u2022 ESCo/MUSCo leases and concession agreements\n\u2022 Tenure, residential and affordable developments\n\u2022 Bonds\n\u2022 Building licences\n\u2022 Site Assembly\n\u2022 Contract amendments\n\u2022 Development disputes (including litigation)\n\u2022 Environmental issues\n\u2022 Advice in relation to sustainability, regulations and compliance\n\u2022 Building Safety Act advice and assistance\n\u2022 Health and Safety, including fire safety and asbestos\n\u2022 Care homes and later living properties\n\u2022 Construction litigation advice\nSALES:\n\u2022Shared Ownership, including setting up shared ownership schemes including;\n odrafting lease incorporating requirements of planning agreements\n\u2022New Build Plot Sales\n\u2022Option to purchase\n\u2022Staircasing (not final and final)\n\u2022Resale/Assignment to new owner\n\u2022Open market sale\n\u2022Build to rent\n\u2022Easements \n\u2022Overage\n\u2022Lifting of restrictive covenants\n\u2022Surrenders\n\u2022Repossessions\n\u2022Managing Agent issues including those arising from Tripartite Agreements i.e. RP, Leaseholder and Managing Agent\n\u2022Energy supply agreements with residents\n\u2022Property taxation advice\n\u2022Lease management, including:\n    o licences to assign\n    o licences for alterations,\n    o deeds of variations,\n    o lease extensions\nThe Lot descriptions are not exhaustive. If the HALA Members and/or OCBs instruct the appointed organisations on matters not explicitly listed within the Lot description, the applicable Framework hourly rates or Fixed Fee, along with the terms of the Framework Agreement, will continue to apply and govern the charges.",
+        "suitability": {
+          "sme": true
+        },
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Quali",
+              "type": "quality",
+              "numbers": [
+                {
+                  "number": 60,
+                  "weight": "percentageExact"
+                }
+              ],
+              "description": "Quality"
+            },
+            {
+              "name": "Price",
+              "type": "price",
+              "numbers": [
+                {
+                  "number": 40,
+                  "weight": "percentageExact"
+                }
+              ],
+              "description": "Price"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "endDate": "2029-08-31T23:59:59+01:00",
+          "startDate": "2026-09-01T00:00:00+01:00",
+          "maxExtentDate": "2030-08-31T23:59:59+01:00"
+        }
+      },
+      {
+        "id": "4",
+        "title": "Commercial Property",
+        "value": {
+          "currency": "GBP",
+          "amountGross": 12650000.0
+        },
+        "status": "active",
+        "renewal": {
+          "description": "Option to extend for a period, or periods, of up to twelve months to \n31st August 2030"
+        },
+        "hasRenewal": true,
+        "description": "The organisations appointed shall provide legal advisory services to the HALA Members in relation to Commercial Property work for which the HALA Members require legal input, including but not limited to:\nPURCHASE AND SALE:\n\u2022 Property rationalisation including purchases, disposals, stock swaps, TUPE (employment issues)\n\u2022 Purchases/disposals of real estate (general)\n\u2022 Auction acquisitions and disposals\n\u2022 Title Investigations\n\u2022 Taking leases\n\u2022 Plot sales (commercial)\n\u2022 Tenanted sales initiatives\n\u2022 Tenanted transfers including overage agreements\n\u2022 Establishing property joint ventures\n\u2022 Consent issues relating to restrictions on title, including lifting of restrictive covenants\n\u2022 Construction contracts (including professional services contracts)\n\u2022 Overage\n\u2022 Property Taxation advice\nPROPERTY MANAGEMENT:\n\u2022Easements\n\u2022Agreements for lease/licences\n\u2022Granting leases\n\u2022Lease management, including:\n   o licences to assign,\n   o licences for alterations,\n   o deeds of variation,\n   o lease extensions,\n   o rent review memoranda etc\n\u2022 Management Agreements\n\u2022 Advice relating to existing leases and management agreements\n\u2022 Commercial Lease renewals and surrenders\n\u2022 Ground rent issues\n\u2022 Serving section 25 and s26 notices and responding to the same when served\n\u2022 Novation agreements\n\u2022 Wayleaves and other utility agreements\n\u2022 Boundary dispute advice\nCONTENTIOUS COMMERCIAL PROPERTY & LITIGATION:\n\u2022 Property litigation\n\u2022 Dilapidations\n\u2022 Adverse Possession, including Traveller issues\n\u2022 Re-possession of premises\n\u2022 Dispute Resolution and Mediation\nThe Lot descriptions are not exhaustive. If the HALA Members and/or OCBs instruct the appointed organisations on matters not explicitly listed within the Lot description, the applicable Framework hourly rates or Fixed Fee, along with the terms of the Framework Agreement, will continue to apply and govern the charges.",
+        "suitability": {
+          "sme": true
+        },
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Quality",
+              "type": "quality",
+              "numbers": [
+                {
+                  "number": 60,
+                  "weight": "percentageExact"
+                }
+              ],
+              "description": "Quality"
+            },
+            {
+              "name": "Price",
+              "type": "price",
+              "numbers": [
+                {
+                  "number": 40,
+                  "weight": "percentageExact"
+                }
+              ],
+              "description": "Price"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "endDate": "2029-08-31T23:59:59+01:00",
+          "startDate": "2026-09-01T00:00:00+01:00",
+          "maxExtentDate": "2030-08-31T23:59:59+01:00"
+        }
+      },
+      {
+        "id": "5",
+        "title": "Residential Property",
+        "value": {
+          "currency": "GBP",
+          "amountGross": 9160000.0
+        },
+        "status": "active",
+        "renewal": {
+          "description": "Option to extend for a period, or periods, of up to twelve months to \n31st August 2030"
+        },
+        "hasRenewal": true,
+        "description": "The organisations appointed shall provide legal advisory services to the HALA Members in relation to\nResidential Property work for which the HALA Members require legal input, including but not limited to:\nPURCHASE AND SALE:\n\u2022 Purchases and sales of individual residential units (freehold/leasehold)\n\u2022 New build plot sales (freehold/leasehold)\n\u2022 Independent Supported Living purchases\n\u2022 Lifting of restrictive covenants\n\u2022 Auctions\n\u2022 Sales under Right To Buy, Right To Acquire / Social HomeBuy\nPROPERTY MANAGEMENT:\n\u2022 Easements\n\u2022 Leasehold enfranchisement\n\u2022 Absent landlords (overseas etc)\n\u2022 Boundary dispute advice\n\u2022 Energy supply agreements with residents\n\u2022 Service charge issues (including sinking fund disputes)\n\u2022 Leasehold Valuation Tribunal advice and advocacy\nSHARED OWNERSHIP:\n\u2022Staircasing (not final and final)\n\u2022New Build plot sales\n\u2022Resale/Assignment to new owner\n\u2022Easements\n\u2022 Lifting of restrictive covenants\n\u2022 Surrenders\n\u2022 Repossessions\n\u2022 Managing Agent issues including;\n    o those arising from Tripartite Agreements i.e. RP, Leaseholder and Managing Agent\n\u2022 Lease management e.g.\n   o licences to assign,\n   o licences for alterations,\n   o deeds of variations, lease extensions\nThe Lot descriptions are not exhaustive. If the HALA Members and/or OCBs instruct the appointed organisations on\nmatters not explicitly listed within the Lot description, the applicable Framework hourly rates or Fixed Fee, along with\nthe terms of the Framework Agreement, will continue to apply and govern the charges.",
+        "suitability": {
+          "sme": true
+        },
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Quality",
+              "type": "quality",
+              "numbers": [
+                {
+                  "number": 50,
+                  "weight": "percentageExact"
+                }
+              ],
+              "description": "Quality"
+            },
+            {
+              "name": "Price",
+              "type": "price",
+              "numbers": [
+                {
+                  "number": 50,
+                  "weight": "percentageExact"
+                }
+              ],
+              "description": "Price"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "endDate": "2029-08-31T23:59:59+01:00",
+          "startDate": "2026-09-01T00:00:00+01:00",
+          "maxExtentDate": "2030-08-31T23:59:59+01:00"
+        }
+      },
+      {
+        "id": "6",
+        "title": "Employment",
+        "value": {
+          "currency": "GBP",
+          "amountGross": 6900000.0
+        },
+        "status": "active",
+        "renewal": {
+          "description": "Option to extend for a period, or periods, of up to twelve months to 31st August 2030"
+        },
+        "hasRenewal": true,
+        "description": "The organisations appointed shall provide legal advisory services to the HALA Members in relation to\nEmployment work for which the HALA Members require legal input, including but not limited to:\nEMPLOYMENT ADVICE:\n\u2022Recruitment and retention\n\u2022Employment status\n\u2022Employment contract issues\n\u2022 Employment & HR policies and procedures\n\u2022 Disciplinary and Grievance matters\n\u2022 Employee and industrial relations\n\u2022 Parental leave\n\u2022 Redundancy\n\u2022 TUPE\n\u2022 Agency workers\n\u2022 Hybrid and flexible working\n\u2022 Collective agreements\nEMPLOYMENT CLAIMS:\n\u2022 Employment Tribunal Claims\n\u2022 Employment Appeals Tribunal/Court of Appeal/Supreme Court proceedings\n\u2022 Employment Claims in the County Court and High Court\n\u2022 Unfair and constructive dismissal\n\u2022Unlawful deduction from wages\n\u2022 Discrimination\n\u2022 Bullying, harassment and victimisation\n\u2022 Equal Pay\n\u2022 Defamation\n\u2022 Whistleblowing\n\u2022 Trade Union rights and industrial action\n\u2022 Judicial Mediation and other forms of dispute resolution/litigation avoidance\n\u2022 Confidentiality and settlement agreements\n\u2022 Special Severance Payments\nPENSIONS:\n\u2022 Pensions\nThe Lot descriptions are not exhaustive. If the HALA Members and/or OCBs instruct the appointed organisations on\nmatters not explicitly listed within the Lot description, the applicable Framework hourly rates or Fixed Fee, along with\nthe terms of the Framework Agreement, will continue to apply and govern the charges.",
+        "suitability": {
+          "sme": true
+        },
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Quality",
+              "type": "quality",
+              "numbers": [
+                {
+                  "number": 60,
+                  "weight": "percentageExact"
+                }
+              ],
+              "description": "Quality"
+            },
+            {
+              "name": "Price",
+              "type": "price",
+              "numbers": [
+                {
+                  "number": 40,
+                  "weight": "percentageExact"
+                }
+              ],
+              "description": "Price"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "endDate": "2029-08-31T23:59:59+01:00",
+          "startDate": "2026-09-01T00:00:00+01:00",
+          "maxExtentDate": "2030-08-31T23:59:59+01:00"
+        }
+      },
+      {
+        "id": "7",
+        "title": "Construction Litigation",
+        "value": {
+          "currency": "GBP",
+          "amountGross": 9160000.0
+        },
+        "status": "active",
+        "renewal": {
+          "description": "Option to extend for a period, or periods, of up to twelve months to 31st August 2030"
+        },
+        "hasRenewal": true,
+        "description": "The organisations appointed shall provide legal advisory services to the HALA Members in relation to\nConstruction Litigation work for which the HALA Members require legal input, including but not limited to:\n\u2022 Contentious Construction\n\u2022 Construction litigation, including;\n\u2022 Fire related defects\n\u2022 Cladding\n\u2022 Building Safety Act advice and assistance\n\u2022 BSA claims\n\u2022 Advice in relation to fire remediation\n\u2022 Advice in relation to boundary disputes\n\u2022 Contractor Insolvency\n\u2022 Adjudication\n\u2022 Dispute Resolution and Mediation\nThe Lot descriptions are not exhaustive. If the HALA Members and/or OCBs instruct the appointed organisations on\nmatters not explicitly listed within the Lot description, the applicable Framework hourly rates or Fixed Fee, along with\nthe terms of the Framework Agreement, will continue to apply and govern the charges.",
+        "suitability": {
+          "sme": true
+        },
+        "awardCriteria": {
+          "criteria": [
+            {
+              "name": "Quality",
+              "type": "quality",
+              "numbers": [
+                {
+                  "number": 60,
+                  "weight": "percentageExact"
+                }
+              ],
+              "description": "Quality"
+            },
+            {
+              "name": "Price",
+              "type": "price",
+              "numbers": [
+                {
+                  "number": 40,
+                  "weight": "percentageExact"
+                }
+              ],
+              "description": "Price"
+            }
+          ]
+        },
+        "contractPeriod": {
+          "endDate": "2029-08-31T23:59:59+01:00",
+          "startDate": "2026-09-01T00:00:00+01:00",
+          "maxExtentDate": "2030-08-31T23:59:59+01:00"
+        }
+      }
+    ],
+    "items": [
+      {
+        "id": "1",
+        "relatedLot": "1",
+        "deliveryAddresses": [
+          {
+            "region": "UKD",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          }
+        ],
+        "additionalClassifications": [
+          {
+            "id": "79100000",
+            "scheme": "CPV",
+            "description": "Legal services"
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "relatedLot": "2",
+        "deliveryAddresses": [
+          {
+            "region": "UKF",
+            "country": "GB",
+            "countryName": "United Kingdom"
+          }
+        ],
+        "additionalClassifications": [
+          {
+            "id": "79100000",
+            "scheme": "CPV",
+            "description": "Legal services"
+          },
+          {
+            "id": "79111000",
+            "scheme": "CPV",
+            "description": "Legal advisory services"
+          }
+        ]
+      },
+      {
+        "id": "3",
+        "relatedLot": "3",
+        "additionalClassifications": [
+          {
+            "id": "79100000",
+            "scheme": "CPV",
+            "description": "Legal services"
+          },
+          {
+            "id": "79110000",
+            "scheme": "CPV",
+            "description": "Legal advisory and representation services"
+          },
+          {
+            "id": "79111000",
+            "scheme": "CPV",
+            "description": "Legal advisory services"
+          }
+        ]
+      },
+      {
+        "id": "4",
+        "relatedLot": "4",
+        "additionalClassifications": [
+          {
+            "id": "79100000",
+            "scheme": "CPV",
+            "description": "Legal services"
+          },
+          {
+            "id": "79110000",
+            "scheme": "CPV",
+            "description": "Legal advisory and representation services"
+          }
+        ]
+      },
+      {
+        "id": "5",
+        "relatedLot": "5",
+        "additionalClassifications": [
+          {
+            "id": "79100000",
+            "scheme": "CPV",
+            "description": "Legal services"
+          },
+          {
+            "id": "79110000",
+            "scheme": "CPV",
+            "description": "Legal advisory and representation services"
+          }
+        ]
+      },
+      {
+        "id": "6",
+        "relatedLot": "6",
+        "additionalClassifications": [
+          {
+            "id": "79100000",
+            "scheme": "CPV",
+            "description": "Legal services"
+          },
+          {
+            "id": "79110000",
+            "scheme": "CPV",
+            "description": "Legal advisory and representation services"
+          },
+          {
+            "id": "79111000",
+            "scheme": "CPV",
+            "description": "Legal advisory services"
+          }
+        ]
+      },
+      {
+        "id": "7",
+        "relatedLot": "7",
+        "additionalClassifications": [
+          {
+            "id": "79100000",
+            "scheme": "CPV",
+            "description": "Legal services"
+          },
+          {
+            "id": "79110000",
+            "scheme": "CPV",
+            "description": "Legal advisory and representation services"
+          }
+        ]
+      }
+    ],
+    "title": "HALA Legal Services (Solicitors) Framework",
+    "value": {
+      "amount": 80000000.0,
+      "currency": "GBP",
+      "amountGross": 96000000.0
+    },
+    "status": "active",
+    "documents": [
+      {
+        "id": "conflictOfInterest",
+        "description": "Not published",
+        "documentType": "conflictOfInterest"
+      },
+      {
+        "id": "L-1014385464",
+        "url": "https://www.delta-esourcing.com/delta/respondToList.html?accessCode=54584464R9",
+        "documentType": "biddingDocuments"
+      },
+      {
+        "id": "013653-2026",
+        "url": "https://www.find-tender.service.gov.uk/Notice/013653-2026",
+        "format": "text/html",
+        "noticeType": "UK4",
+        "description": "Tender notice on Find a Tender",
+        "documentType": "tenderNotice",
+        "datePublished": "2026-02-13T19:05:42Z"
+      }
+    ],
+    "legalBasis": {
+      "id": "2023/54",
+      "uri": "https://www.legislation.gov.uk/ukpga/2023/54/contents",
+      "scheme": "UKPGA"
+    },
+    "techniques": {
+      "frameworkAgreement": {
+        "type": "open",
+        "method": "withAndWithoutReopeningCompetition",
+        "description": "Prices are determined on the basis of fixed fee schedules and hourly rates",
+        "buyerCategories": "The Housing Associations\u2019 Legal Alliance (\u201cHALA\u201d) is a consortium of 54 Registered Providers of Social Housing in England and Wales. HALA Members will all have access to the Framework. \nIt is likely that other Registered Providers of Social Housing in England and Wales may join HALA and access the Framework Agreements in due course. This includes, but is not limited to:\n\u2022 Registered Providers\n\u2022 Registered Social Landlords\n\u2022 Registered Charities\n\u2022 Local Authorities (and any partly or wholly owned subsidiary company)\n\u2022 Arm\u2019s-length Management Organisations (ALMOs), \n\u2022 any company or other constituted body which is within a legal group of \ncompanies including a Social Housing Provider\n\u2022 and any other consortia of Social Housing Providers and their members",
+        "buyerLocationRestrictions": [
+          {
+            "gazetteer": {
+              "scheme": "GB-ITL",
+              "identifiers": [
+                "UKG"
+              ]
+            }
+          },
+          {
+            "gazetteer": {
+              "scheme": "GB-ITL",
+              "identifiers": [
+                "UKF"
+              ]
+            }
+          },
+          {
+            "gazetteer": {
+              "scheme": "GB-ITL",
+              "identifiers": [
+                "UKI"
+              ]
+            }
+          },
+          {
+            "gazetteer": {
+              "scheme": "GB-ITL",
+              "identifiers": [
+                "UKH"
+              ]
+            }
+          },
+          {
+            "gazetteer": {
+              "scheme": "GB-ITL",
+              "identifiers": [
+                "UKK"
+              ]
+            }
+          },
+          {
+            "gazetteer": {
+              "scheme": "GB-ITL",
+              "identifiers": [
+                "UKJ"
+              ]
+            }
+          },
+          {
+            "gazetteer": {
+              "scheme": "GB-ITL",
+              "identifiers": [
+                "UKL"
+              ]
+            }
+          },
+          {
+            "gazetteer": {
+              "scheme": "GB-ITL",
+              "identifiers": [
+                "UKC"
+              ]
+            }
+          },
+          {
+            "gazetteer": {
+              "scheme": "GB-ITL",
+              "identifiers": [
+                "UKE"
+              ]
+            }
+          },
+          {
+            "gazetteer": {
+              "scheme": "GB-ITL",
+              "identifiers": [
+                "UKD"
+              ]
+            }
+          }
+        ]
+      },
+      "hasFrameworkAgreement": true
+    },
+    "awardPeriod": {
+      "endDate": "2026-07-09T23:59:59+01:00"
+    },
+    "description": "The Housing Associations\u2019 Legal Alliance (HALA) members wish to enter into a framework agreement with a number of legal advisers in relation to legal services.\nThe legal services, under the Framework, will cover seven (7) lots. These are:\nLot 1: Corporate, Governance & Finance\nLot 2: Housing & Asset Management\nLot 3: Development\nLot 4: Commercial Property\nLot 5: Residential Property\nLot 6: Employment\nLot 7: Construction Litigation\nTender documents are available to download at: https://www.delta-esourcing.com/delta/respondToList.html?accessCode=54584464R9\nTo view this notice, please click here: \nhttps://www.delta-esourcing.com/delta/viewNotice.html?noticeId=1014370150",
+    "riskDetails": "Published Framework Value (Tender Notice): The advertised spend for legal services as specified in the procurement documents and this Tender Notice is indicative only. This value reflects the anticipated demand; however, actual expenditure may vary due to the unpredictable nature of legal requirements and the varied resource constraints of the HALA members. In the event that this known unknown risk materialises, the Contracting Authority reserves the right to undertake a permitted modification in accordance with Schedule 8(5)(a) of the Act.\nAdvertised Lot Values: The advertised lot values for this framework have been determined on the basis of current market conditions, anticipated framework utilisation, and the terms of the existing framework (terminating in 2026). The Contracting Authority recognises that future changes in market conditions may result in discrepancies between the estimated and actual values.\nHALA Membership: The anticipated growth in HALA membership during the life of the framework is difficult for the Contracting Authority to forecast. This could also have a material impact on the spend through the framework however.\nIn the event that this known unknown risk materialises, the Contracting Authority reserves the right to undertake a permitted modification in accordance with Schedule 8(5)(a) of the Act.\nTenderers' Pricing Submissions: Tenderers must submit prices to be fixed for the duration of the contract, subject to a potential permitted indexation adjustment, commencing on the second anniversary of the contract. Price adjustments will be permitted based on movements in the Consumer Price Index (CPI) as published by the Office for National Statistics (or any successor index). These potential adjustments are subject to a cap of 3% (as such, if the actual CPI increase surpasses 3%, the applied adjustment will still be limited to 3%).\nIt is acknowledged that the overall estimated framework spend published in this tender notice may be exceeded and that the permitted pricing adjustments may be a contributing factor in the final framework value exceeding the initially advertised amount.\nIn the event that the overall framework spend exceeds the advertised value, the Contracting Authority reserves the right to vary the framework agreement during its term in accordance with Schedule 8(5)(a) of the Act.",
+    "tenderPeriod": {
+      "endDate": "2026-03-23T12:00:00+00:00"
+    },
+    "enquiryPeriod": {
+      "endDate": "2026-03-23T10:00:00+00:00"
+    },
+    "specialRegime": [
+      "lightTouch"
+    ],
+    "aboveThreshold": true,
+    "submissionTerms": {
+      "languages": [
+        "en"
+      ],
+      "electronicSubmissionPolicy": "allowed"
+    },
+    "participationFees": [
+      {
+        "id": "ocds-h6vhtk-0599ce",
+        "type": [
+          "win"
+        ],
+        "description": "N/A"
+      }
+    ],
+    "procurementMethod": "open",
+    "mainProcurementCategory": "services",
+    "submissionMethodDetails": "https://www.delta-esourcing.com/delta/respondToList.html?accessCode=54584464R9",
+    "procurementMethodDetails": "Open procedure"
+  },
+  "parties": [
+    {
+      "id": "GB-PPON-PXJP-9994-BJBR",
+      "name": "Southern Housing",
+      "roles": [
+        "buyer"
+      ],
+      "address": {
+        "region": "UKI43",
+        "country": "GB",
+        "locality": "London",
+        "postalCode": "EC1M 5LA",
+        "countryName": "United Kingdom",
+        "streetAddress": "Fleet House, 59-61 Clerkenwell Road"
+      },
+      "details": {
+        "classifications": [
+          {
+            "id": "publicAuthoritySubCentralGovernment",
+            "scheme": "UK_CA_TYPE",
+            "description": "Public authority - sub-central government"
+          }
+        ]
+      },
+      "identifier": {
+        "id": "PXJP-9994-BJBR",
+        "scheme": "GB-PPON"
+      },
+      "contactPoint": {
+        "name": "Antony Silk",
+        "email": "antony.silk@southernhousing.org.uk",
+        "telephone": "02080362891"
+      }
+    },
+    {
+      "id": "GB-PPON-PLMQ-7162-VNYP",
+      "name": "Kennedy Cater",
+      "roles": [
+        "procuringEntity"
+      ],
+      "address": {
+        "region": "UKI32",
+        "country": "GB",
+        "locality": "London",
+        "postalCode": "WC2H 0HF",
+        "countryName": "United Kingdom",
+        "streetAddress": "Pennine Place, 2A Charing Cross Road"
+      },
+      "identifier": {
+        "id": "PLMQ-7162-VNYP",
+        "scheme": "GB-PPON"
+      },
+      "roleDetails": "Appointed Agent",
+      "contactPoint": {
+        "name": "Richard Short",
+        "email": "Richard.Short@KennedyCater.com",
+        "telephone": "02071134020"
+      }
+    }
+  ],
+  "language": "en",
+  "initiationType": "tender"
+}

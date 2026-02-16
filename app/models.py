@@ -114,4 +114,9 @@ class NoticeMatch(Base):
     feedback_status = Column(String(20)) # 'GO', 'NO_GO', 'REVIEW'
     viability_warning = Column(Text)
     
+    # Bid/No-Bid Enhancements (PRD 03)
+    risk_flags = Column(JSONB) # { "TUPE": true, "Safeguarding": "High", ... }
+    checklist = Column(JSONB) # [ { "item": "Cyber Essentials", "status": "missing" }, ... ]
+    recommendation_reasons = Column(ARRAY(Text)) # Reasons for GO/NO_GO
+    
     created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -104,7 +104,7 @@ class MatchingEngine:
                      try:
                         score_semantic = self._cosine_similarity(profile.profile_embedding, target_embedding)
                         # Normalize negative cosine similarity if any (unlikely for text but safe)
-                        score_semantic = max(0, score_semantic)
+                        score_semantic = max(0.0, score_semantic)
                      except Exception as e:
                         logger.error(f"Error calculating similarity: {e}")
 
@@ -118,9 +118,6 @@ class MatchingEngine:
                 if union:
                     # Jaccard Similarity
                     score_domain = len(intersection) / len(union)
-            
-            # Fallback/Bonus: UKCAT Keyword matching? 
-            # If score_domain is 0 and we have ukcat_codes, we could do keyword check.
 
             # 3. Geo Score (15%)
             score_geo = self._calculate_geo_score(profile, notice)
@@ -138,19 +135,109 @@ class MatchingEngine:
                 if matches_found > 0:
                     score_boost = min(1.0, 0.5 + (0.1 * matches_found))
 
+            # --- PHASE 3: BID/NO-BID & SUITABILITY (PRD 03) ---
+            
+            risk_flags = {}
+            checklist = []
+            recommendation_reasons = []
+            
+            tender = notice.raw_json.get("tender", {})
+            lots = tender.get("lots", [])
+            
+            # 1. Suitability Highlights
+            is_sme_suitable = tender.get("suitability", {}).get("sme") or any(lot.get("suitability", {}).get("sme") for lot in lots)
+            is_vcse_suitable = tender.get("suitability", {}).get("vcse") or any(lot.get("suitability", {}).get("vcse") for lot in lots)
+            is_light_touch = "lightTouch" in tender.get("specialRegime", [])
+            
+            if is_vcse_suitable:
+                recommendation_reasons.append("Explicitly marked as suitable for VCSEs/Charities.")
+            elif is_sme_suitable:
+                recommendation_reasons.append("Marked as suitable for SMEs (favorable for small nonprofits).")
+            
+            if is_light_touch:
+                recommendation_reasons.append("Under 'Light Touch' regime (Social/Health/Education services).")
+
+            # 2. Lot-Level Value Analysis
+            # Even if total notice value is high, check if individual lots are suitable
+            suitable_lots = []
+            if lots:
+                for lot in lots:
+                    lot_value = lot.get("value", {}).get("amountGross") or lot.get("value", {}).get("amount")
+                    if lot_value:
+                        # Check turnover ratio for this specific lot
+                        if profile.latest_income and lot_value > (profile.latest_income * 0.5):
+                            continue # Too big
+                        
+                        # Check user value bounds
+                        if profile.min_contract_value and lot_value < profile.min_contract_value:
+                            continue
+                        if profile.max_contract_value and lot_value > profile.max_contract_value:
+                            continue
+                        
+                        suitable_lots.append(lot.get("title", f"Lot {lot.get('id')}"))
+                
+                if suitable_lots and len(suitable_lots) < len(lots):
+                    recommendation_reasons.append(f"Notice contains {len(suitable_lots)}/{len(lots)} suitable lots based on scale.")
+                elif not suitable_lots and viability_warning:
+                     recommendation_reasons.append("No individual lots found within turnover/value bounds.")
+
+            # 3. TUPE Detection
+            text_to_scan = f"{notice.title} {notice.description}".lower()
+            if "tupe" in text_to_scan or "transfer of undertakings" in text_to_scan:
+                risk_flags["TUPE"] = "High Risk: Possible staff transfer requirements detected."
+                recommendation_reasons.append("Potential TUPE exposure requires legal/HR review.")
+
+            # 4. Safeguarding Detection
+            safeguarding_keywords = ["safeguarding", "enhanced dbs", "vulnerable adults", "child protection", "regulated activity"]
+            if any(kw in text_to_scan for kw in safeguarding_keywords):
+                risk_flags["Safeguarding"] = "Review Required: Enhanced safeguarding standards likely required."
+                recommendation_reasons.append("Mandatory safeguarding requirements detected.")
+
+            # 5. Mobilization Timeline
+            if notice.publication_date and notice.deadline_date:
+                days_to_deadline = (notice.deadline_date - notice.publication_date).days
+                if days_to_deadline < 30:
+                    risk_flags["Mobilization"] = "Caution: Short bidding/mobilization window."
+                    recommendation_reasons.append(f"Tight window ({days_to_deadline} days) for bid preparation.")
+
+            # 6. Eligibility Checklist (Refined)
+            if "social care" in text_to_scan or "health" in text_to_scan:
+                checklist.append({"item": "Enhanced DBS Checks", "status": "Required"})
+            
+            if "tree" in text_to_scan or "construction" in text_to_scan:
+                checklist.append({"item": "Public Liability Insurance (£10m)", "status": "Check Policy"})
+            
+            if "software" in text_to_scan or "system" in text_to_scan or "data" in text_to_scan:
+                checklist.append({"item": "Cyber Essentials Plus", "status": "Check Certificate"})
+            
+            if "procurement" in text_to_scan or "framework" in text_to_scan:
+                 checklist.append({"item": "Social Value Proposal", "status": "Mandatory"})
+
+            if viability_warning and not suitable_lots:
+                 recommendation_reasons.append(viability_warning)
+
             # --- TOTAL SCORE ---
             # Weights: 55%, 20%, 15%, 10%
             total_score = (score_semantic * 0.55) + (score_domain * 0.20) + (score_geo * 0.15) + (score_boost * 0.10)
+            
+            # Apply Suitability Boost to Score
+            if is_vcse_suitable: total_score = min(1.0, total_score + 0.15)
+            elif is_sme_suitable: total_score = min(1.0, total_score + 0.10)
+            if is_light_touch: total_score = min(1.0, total_score + 0.05)
 
-            # --- PHASE 3: RECOMMENDATION ---
+            # --- PHASE 4: RECOMMENDATION ---
             status = "NO_GO"
-            if total_score > 0.50 and not viability_warning:
-                # If we have a geo gate and score_geo is 0, maybe downgrade to REVIEW?
-                if profile.service_regions and score_geo == 0:
-                     status = "REVIEW"
+            
+            # Logic: If semantic match is good and turnover is okay for at least one lot
+            if total_score > 0.60 and not risk_flags.get("TUPE"):
+                if (not viability_warning or suitable_lots):
+                    if profile.service_regions and score_geo == 0:
+                         status = "REVIEW"
+                    else:
+                        status = "GO"
                 else:
-                    status = "GO"
-            elif total_score > 0.25 or viability_warning:
+                    status = "REVIEW"
+            elif total_score > 0.25 or viability_warning or risk_flags:
                 status = "REVIEW"
             
             # Create/Update Match Record
@@ -162,7 +249,10 @@ class MatchingEngine:
                 score_domain=score_domain,
                 score_geo=score_geo,
                 feedback_status=status,
-                viability_warning=viability_warning
+                viability_warning=viability_warning if not suitable_lots else None,
+                risk_flags=risk_flags,
+                checklist=checklist,
+                recommendation_reasons=recommendation_reasons
             )
             self.db.merge(match_record) # Upsert
         

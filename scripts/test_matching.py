@@ -77,8 +77,19 @@ def test_matching():
         for match, notice in matches:
             logger.info(f"Score: {match.score:.4f} | Status: {match.feedback_status}")
             logger.info(f"  Title: {notice.title}")
+            
             if match.viability_warning:
                 logger.info(f"  ⚠ Warning: {match.viability_warning}")
+            
+            if match.risk_flags:
+                logger.info(f"  🚩 Risks: {match.risk_flags}")
+            
+            if match.checklist:
+                logger.info(f"  📋 Checklist: {match.checklist}")
+                
+            if match.recommendation_reasons:
+                logger.info(f"  💡 Reasons: {', '.join(match.recommendation_reasons)}")
+                
             logger.info("-" * 20)
             
     finally:
