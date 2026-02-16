@@ -6,6 +6,7 @@ from app.database import SessionLocal
 from app.models import Notice, Buyer, IngestionLog
 from app.services.ingestion.clients.fts_client import FTSClient
 from app.services.ingestion.normalizer import Normalizer
+from app.services.ingestion.embeddings import EmbeddingService
 
 logger = logging.getLogger(__name__)
 
@@ -13,6 +14,7 @@ class IngestionWorker:
     def __init__(self):
         self.fts_client = FTSClient()
         self.normalizer = Normalizer()
+        self.embeddings = EmbeddingService()
 
     def run(self, limit=None, start_date=None):
         db = SessionLocal()
@@ -41,6 +43,14 @@ class IngestionWorker:
                     
                     # 2. Process Notice
                     notice = self.normalizer.map_release_to_notice(release, buyer.id)
+                    
+                    # Generate embedding for description
+                    if notice.description:
+                        try:
+                            notice.embedding = self.embeddings.get_embedding(notice.description)
+                        except Exception as emb_e:
+                            logger.error(f"Failed to generate embedding for notice {notice.ocid}: {emb_e}")
+
                     notice_data = {c.name: getattr(notice, c.name) for c in notice.__table__.columns}
                     
                     stmt = insert(Notice).values(**notice_data).on_conflict_do_update(
@@ -48,6 +58,7 @@ class IngestionWorker:
                         set_={
                             'title': notice.title,
                             'description': notice.description,
+                            'embedding': notice.embedding,
                             'updated_at': datetime.utcnow()
                         }
                     )

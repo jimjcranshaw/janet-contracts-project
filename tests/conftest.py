@@ -5,11 +5,11 @@ import os
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from unittest.mock import MagicMock
 # Mock pgvector for local testing if not installed
 try:
     import pgvector
 except ImportError:
-    from unittest.mock import MagicMock
     sys.modules["pgvector"] = MagicMock()
     sys.modules["pgvector.sqlalchemy"] = MagicMock()
     # Mock vector as JSON for SQLite (list of floats)

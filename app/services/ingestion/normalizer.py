@@ -59,6 +59,6 @@ class Normalizer:
             notice_type=release.get('tag', ['contractNotice'])[0], # Default to first tag
             raw_json=release,
             source_url=tender.get('documents', [{}])[0].get('url'), # Approximate
-            cpv_codes=[item.get('id') for item in tender.get('items', []) if item.get('classification')],
+            cpv_codes=[item.get('classification', {}).get('id') for item in tender.get('items', []) if item.get('classification')],
             updated_at=datetime.utcnow()
         )
