@@ -44,6 +44,23 @@ class Normalizer:
         amount = value_data.get('amount')
         currency = value_data.get('currency', 'GBP')
 
+        # Extract Contract Period (PRD 05)
+        contract_start = None
+        contract_end = None
+        
+        # Check tenderPeriod or contractPeriod in tender
+        cp = tender.get('contractPeriod', {})
+        if not cp: # fallback to awards
+            awards = release.get('awards', [])
+            if awards: cp = awards[0].get('contractPeriod', {})
+            
+        if cp.get('startDate'):
+            try: contract_start = datetime.fromisoformat(cp.get('startDate').replace('Z', '+00:00'))
+            except: pass
+        if cp.get('endDate'):
+            try: contract_end = datetime.fromisoformat(cp.get('endDate').replace('Z', '+00:00'))
+            except: pass
+
         # Create Notice
         return Notice(
             ocid=release.get('ocid'),
@@ -60,5 +77,7 @@ class Normalizer:
             raw_json=release,
             source_url=tender.get('documents', [{}])[0].get('url'), # Approximate
             cpv_codes=[item.get('classification', {}).get('id') for item in tender.get('items', []) if item.get('classification')],
+            contract_period_start=contract_start,
+            contract_period_end=contract_end,
             updated_at=datetime.utcnow()
         )

@@ -58,6 +58,10 @@ class Notice(Base):
     # Vector embedding for description (1536 dims for text-embedding-3-small)
     embedding = Column(Vector(1536))
     
+    # Contract Period (for Renewal Intelligence PRD 05)
+    contract_period_start = Column(DateTime(timezone=True))
+    contract_period_end = Column(DateTime(timezone=True))
+    
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     is_archived = Column(Boolean, default=False)
 
@@ -94,6 +98,9 @@ class ServiceProfile(Base):
     min_contract_value = Column(Integer)
     max_contract_value = Column(Integer)
     
+    # Social Value & Outcomes (PRD 08)
+    outcomes_evidence = Column(JSONB) # [ {"outcome": "...", "evidence": "...", "verified": bool} ]
+
     # Embedding (Concat of Mission/Vision/Services/Population)
     profile_embedding = Column(Vector(1536))
     
@@ -118,5 +125,45 @@ class NoticeMatch(Base):
     risk_flags = Column(JSONB) # { "TUPE": true, "Safeguarding": "High", ... }
     checklist = Column(JSONB) # [ { "item": "Cyber Essentials", "status": "missing" }, ... ]
     recommendation_reasons = Column(ARRAY(Text)) # Reasons for GO/NO_GO
+    
+    # New: Tracking for Opportunity Feed (PRD 04)
+    is_tracked = Column(Boolean, default=False)
+    
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class Alert(Base):
+    """
+    Structured alerts for the Opportunity Feed (PRD 04/05).
+    """
+    __tablename__ = "alert"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id = Column(UUID(as_uuid=True), ForeignKey("service_profile.org_id"))
+    notice_id = Column(Text, ForeignKey("notice.ocid"))
+    
+    alert_type = Column(String(50))  # 'NEW_MATCH', 'MATERIAL_CHANGE', 'RENEWAL'
+    severity = Column(String(20))    # 'info', 'warning', 'critical'
+    message = Column(Text)
+    details = Column(JSONB)         # { "diff": {...} }
+    
+    is_read = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+class ExtractedRequirement(Base):
+    """
+    Requirements extracted from tender documents via LLM (PRD 07).
+    """
+    __tablename__ = "extracted_requirement"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    notice_id = Column(Text, ForeignKey("notice.ocid"), index=True)
+    
+    category = Column(String(50)) # 'ELIGIBILITY', 'RISK', 'SOCIAL_VALUE', 'TECHNICAL'
+    requirement_text = Column(Text)
+    is_mandatory = Column(Boolean, default=False)
+    
+    # Matching logic metadata
+    suitability_flags = Column(ARRAY(Text)) # e.g. ["SME_FRIENDLY", "CHARITY_ONLY"]
+    risk_level = Column(String(20)) # 'low', 'medium', 'high'
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())

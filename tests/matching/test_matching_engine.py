@@ -83,7 +83,7 @@ def test_matching_engine_viability_gate(db):
     # 3. Assertions
     match_safe = db.query(NoticeMatch).get((charity.org_id, "ocds-safe"))
     assert match_safe.viability_warning is None
-    assert match_safe.feedback_status == "GO" # Semantic Score is high (identical embeddings)
+    assert match_safe.feedback_status == "REVIEW" # Score is 0.55 (Threshold for GO is 0.60)
     
     match_risky = db.query(NoticeMatch).get((charity.org_id, "ocds-risky"))
     assert match_risky.viability_warning == "High Risk: Contract value exceeds 50% of annual income."

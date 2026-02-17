@@ -8,6 +8,10 @@ from app.services.ingestion.clients.fts_client import FTSClient
 from app.services.ingestion.normalizer import Normalizer
 from app.services.ingestion.embeddings import EmbeddingService
 
+from app.services.alerts.alert_service import AlertService
+from app.services.documents.document_service import DocumentService
+from app.services.matching.requirement_service import RequirementService
+
 logger = logging.getLogger(__name__)
 
 class IngestionWorker:
@@ -15,6 +19,9 @@ class IngestionWorker:
         self.fts_client = FTSClient()
         self.normalizer = Normalizer()
         self.embeddings = EmbeddingService()
+        self.alerts = AlertService(SessionLocal())
+        self.documents = DocumentService()
+        self.requirements = RequirementService(SessionLocal())
 
     def run(self, limit=None, start_date=None):
         db = SessionLocal()
@@ -51,6 +58,18 @@ class IngestionWorker:
                         except Exception as emb_e:
                             logger.error(f"Failed to generate embedding for notice {notice.ocid}: {emb_e}")
 
+                    # --- PRD 04: Detect Material Changes ---
+                    existing_notice = db.query(Notice).filter(Notice.ocid == notice.ocid).first()
+                    if existing_notice:
+                        changes = self.alerts.check_for_changes(existing_notice, {
+                            "deadline_date": notice.deadline_date,
+                            "value_amount": notice.value_amount,
+                            "notice_type": notice.notice_type
+                        })
+                        if changes:
+                            logger.info(f"Material change detected in notice {notice.ocid}: {changes}")
+                            self.alerts.process_change(notice.ocid, changes)
+
                     notice_data = {c.name: getattr(notice, c.name) for c in notice.__table__.columns}
                     
                     stmt = insert(Notice).values(**notice_data).on_conflict_do_update(
@@ -59,11 +78,25 @@ class IngestionWorker:
                             'title': notice.title,
                             'description': notice.description,
                             'embedding': notice.embedding,
+                            'value_amount': notice.value_amount,
+                            'deadline_date': notice.deadline_date,
+                            'notice_type': notice.notice_type,
                             'updated_at': datetime.utcnow()
                         }
                     )
                     db.execute(stmt)
-                    db.commit() # Commit each record for safety during testing
+                    db.commit() # Commit each record
+                    
+                    # --- PRD 07: Process Tender Documents (RAG) ---
+                    if notice.source_url:
+                        try:
+                            logger.info(f"Processing tender documents for {notice.ocid}")
+                            text = self.documents.fetch_and_extract_text(notice.source_url)
+                            if text:
+                                self.requirements.extract_requirements(notice.ocid, text)
+                        except Exception as doc_e:
+                            logger.error(f"Failed RAG processing for {notice.ocid}: {doc_e}")
+
                     count += 1
                     
                     if limit and count >= limit:
