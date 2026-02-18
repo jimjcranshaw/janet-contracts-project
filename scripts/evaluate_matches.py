@@ -10,14 +10,9 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from app.database import SessionLocal
 from app.models import ServiceProfile, Notice, NoticeMatch
 from app.services.matching.engine import MatchingEngine
-from app.services.matching.consortium_service import ConsortiumService
-from app.services.matching.social_value_service import SocialValueService
-
 def evaluate_matches():
     db = SessionLocal()
     engine = MatchingEngine(db)
-    consortium_service = ConsortiumService(db)
-    sv_service = SocialValueService(db)
     
     charities = db.query(ServiceProfile).all()
     print(f"--- Evaluating Matches for {len(charities)} Charities ---")
@@ -44,25 +39,18 @@ def evaluate_matches():
 
         for i, (m, n) in enumerate(matches):
             print(f"\n{i+1}. MATCH: {n.title}")
-            print(f"   Score: {float(m.score):.2f} (Semantic: {float(m.score_semantic):.2f}, Geo: {float(m.score_geo):.2f})")
+            print(f"   Score: {float(m.score):.2f} (Semantic: {float(m.score_semantic):.2f}, UKCAT/Domain: {m.score_domain})")
             print(f"   Decision: {m.feedback_status}")
             
-            # Enrichment logic
-            consortium = consortium_service.recommend_consortium(n.ocid, charity.org_id)
-            sv_fit = sv_service.analyze_social_value_fit(charity.org_id, n.ocid)
-            
-            if consortium['recommended']:
-                print(f"   PARTNERSHIP: Consortium Recommended!")
-                for r in consortium['reasons']:
+            if m.recommendation_reasons:
+                print(f"   REASONS:")
+                for r in m.recommendation_reasons:
                     print(f"     - {r}")
-            
-            if sv_fit.get('fit_score'):
-                print(f"   SOCIAL VALUE FIT: {sv_fit['fit_score']:.1f}")
-                if sv_fit.get('gaps'):
-                    print(f"     ⚠ Gaps: {len(sv_fit['gaps'])} requirements missing evidence.")
             
             if m.risk_flags:
                 print(f"   RISKS: {list(m.risk_flags.keys())}")
+                for rk, rv in m.risk_flags.items():
+                    print(f"     - {rk}: {rv}")
 
     db.close()
 

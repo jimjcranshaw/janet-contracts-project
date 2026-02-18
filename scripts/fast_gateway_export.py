@@ -2,7 +2,6 @@ import sys
 import os
 import pandas as pd
 from sqlalchemy.orm import Session
-from decimal import Decimal
 
 # Add parent directory to path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -10,40 +9,40 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from app.database import SessionLocal
 from app.models import ServiceProfile, Notice, NoticeMatch
 from app.services.matching.engine import MatchingEngine
-def export_results():
+
+def run_fast_match():
     db = SessionLocal()
     engine = MatchingEngine(db)
     
     charities = db.query(ServiceProfile).all()
-    print(f"--- Exporting Match Results for {len(charities)} Charities ---")
+    print(f"--- Fast Gateway Match & Export for {len(charities)} Charities ---")
     
     all_data = []
     
     for i, charity in enumerate(charities):
-        print(f"[{i+1}/{len(charities)}] Processing {charity.name} (Income: {charity.latest_income or 'N/A'})...")
+        print(f"[{i+1}/{len(charities)}] Matching {charity.name}...")
         
-        # 1. Trigger batch matching for this charity
-        # engine.calculate_matches(charity.org_id)
+        # 1. Run the optimized filter funnel
+        engine.calculate_matches(charity.org_id)
         
-        # 2. Fetch all matches from DB
+        # 2. Fetch matches that passed the gates
         matches = db.query(NoticeMatch, Notice).join(
             Notice, NoticeMatch.notice_id == Notice.ocid
         ).filter(
-            NoticeMatch.org_id == charity.org_id
+            NoticeMatch.org_id == charity.org_id,
+            NoticeMatch.score > 0  # Passed gates
         ).all()
         
+        print(f"    -> Found {len(matches)} suitable matches")
+        
         for m, n in matches:
-            score = float(m.score) if m.score else 0.0
             flags = m.risk_flags or {}
-            
-            # Format row
             row = {
                 "Charity Name": charity.name,
                 "Charity Income": f"£{charity.latest_income:,.2f}" if charity.latest_income else "N/A",
-                "Tender OCID": n.ocid,
                 "Tender Title": n.title,
-                "Tender Value": n.value_amount,
-                "Overall Score": score,
+                "Tender Value": f"£{float(n.value_amount):,.2f}" if n.value_amount else "N/A",
+                "Overall Score": float(m.score),
                 "Semantic Score": float(m.score_semantic) if m.score_semantic else 0.0,
                 "UKCAT Score": float(m.score_theme) if m.score_theme else 0.0,
                 "Domain Score": float(m.score_domain) if m.score_domain else 0.0,
@@ -53,24 +52,24 @@ def export_results():
                 "SME Suitable": flags.get("is_sme", "N/A"),
                 "VCSE Suitable": flags.get("is_vcse", "N/A"),
                 "Decision": m.feedback_status,
-                "Viability Warning": m.viability_warning,
                 "Risk Flags": ", ".join(k for k in flags.keys() if not k.startswith("is_")) if flags else "",
-                "Recommendation Details": "; ".join(m.recommendation_reasons or []),
-                "Checklist Items": len(m.checklist or [])
+                "Recommendation Reasons": "; ".join(m.recommendation_reasons or []),
+                "OCID": n.ocid
             }
             all_data.append(row)
 
-            
-    df = pd.DataFrame(all_data)
-    if not df.empty:
+    if all_data:
+        # Sort by Charity Name then Overall Score descending
+        df = pd.DataFrame(all_data)
         df = df.sort_values(by=["Charity Name", "Overall Score"], ascending=[True, False])
-    
-    # Save to Excel
-    output_file = "matching_results_v2.xlsx"
-    df.to_excel(output_file, index=False)
-    print(f"--- Export Complete: {output_file} ({len(all_data)} rows) ---")
+        
+        output_file = "fast_gateway_results_v4.xlsx"
+        df.to_excel(output_file, index=False)
+        print(f"\n--- Export Complete: {output_file} ({len(all_data)} rows) ---")
+    else:
+        print("\n--- No matches passed the gateways. ---")
     
     db.close()
 
 if __name__ == "__main__":
-    export_results()
+    run_fast_match()

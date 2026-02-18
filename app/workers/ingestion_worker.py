@@ -11,6 +11,7 @@ from app.services.ingestion.embeddings import EmbeddingService
 from app.services.alerts.alert_service import AlertService
 from app.services.documents.document_service import DocumentService
 from app.services.matching.requirement_service import RequirementService
+from app.services.matching.ukcat_tagger import tagger as ukcat_tagger
 
 logger = logging.getLogger(__name__)
 
@@ -22,6 +23,7 @@ class IngestionWorker:
         self.alerts = AlertService(SessionLocal())
         self.documents = DocumentService()
         self.requirements = RequirementService(SessionLocal())
+        self.ukcat_tagger = ukcat_tagger
 
     def run(self, limit=None, start_date=None):
         db = SessionLocal()
@@ -50,6 +52,10 @@ class IngestionWorker:
                     
                     # 2. Process Notice
                     notice = self.normalizer.map_release_to_notice(release, buyer.id)
+                    
+                    # Generate UKCAT tags
+                    text_to_tag = f"{notice.title} {notice.description or ''}"
+                    notice.inferred_ukcat_codes = self.ukcat_tagger.tag_text(text_to_tag)
                     
                     # Generate embedding for description
                     if notice.description:
@@ -81,6 +87,7 @@ class IngestionWorker:
                             'value_amount': notice.value_amount,
                             'deadline_date': notice.deadline_date,
                             'notice_type': notice.notice_type,
+                            'inferred_ukcat_codes': notice.inferred_ukcat_codes,
                             'updated_at': datetime.utcnow()
                         }
                     )

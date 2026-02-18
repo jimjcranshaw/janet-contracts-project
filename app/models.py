@@ -54,6 +54,7 @@ class Notice(Base):
     raw_json = Column(JSONB, nullable=False)
     source_url = Column(Text)
     cpv_codes = Column(ARRAY(Text)) # Specific Procurement Codes
+    inferred_ukcat_codes = Column(ARRAY(Text)) # Auto-tagged via UKCAT regex
     
     # Vector embedding for description (1536 dims for text-embedding-3-small)
     embedding = Column(Vector(1536))
@@ -117,6 +118,7 @@ class NoticeMatch(Base):
     score_semantic = Column(Numeric(5, 4))
     score_domain = Column(Numeric(5, 4))
     score_geo = Column(Numeric(5, 4))
+    score_theme = Column(Numeric(5, 4))
     
     feedback_status = Column(String(20)) # 'GO', 'NO_GO', 'REVIEW'
     viability_warning = Column(Text)
@@ -126,7 +128,10 @@ class NoticeMatch(Base):
     checklist = Column(JSONB) # [ { "item": "Cyber Essentials", "status": "missing" }, ... ]
     recommendation_reasons = Column(ARRAY(Text)) # Reasons for GO/NO_GO
     
-    # New: Tracking for Opportunity Feed (PRD 04)
+    # Deep Review (Tier 2 - PRD 03 Enhancements)
+    deep_verdict = Column(String(20)) # 'PASS', 'FAIL'
+    deep_rationale = Column(Text)
+    
     is_tracked = Column(Boolean, default=False)
     
     created_at = Column(DateTime(timezone=True), server_default=func.now())

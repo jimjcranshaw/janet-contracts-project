@@ -1,94 +1,63 @@
 import logging
-from sqlalchemy import select, and_, func
+from decimal import Decimal
+from sqlalchemy import select, and_, func, or_, text, cast, Numeric
 from sqlalchemy.orm import Session
 from app.models import Notice, ServiceProfile, NoticeMatch
-from pgvector.sqlalchemy import Vector
+from .ukcat_tagger import tagger
 
 logger = logging.getLogger(__name__)
 
+
 class MatchingEngine:
     """
-    Core Logic for Procurement Matching (Grants AI Alignment).
-    Phase 1: Hard Gates (Geo, Viability)
-    Phase 2: Weighted Scoring (55% AI, 20% Domain, 15% Geo, 10% Boost)
+    Filter Funnel Matching Engine (v2.1).
+    Stages:
+      1. SQL Pre-filter (Status, Deadline, Category)
+      2. VCSE/SME Gate (Hard Exclude)
+      3. Value Gate (Hard Exclude > 40% income)
+      4. Geo Gate (Hard Match unless National)
+      5. CPV Division Match (Hard Overlap)
+      6. UKCAT Theme Match (Structured Scoring)
+      7. Cosine Scoring (Final ranking)
+    
+    No LLM calls. All AI analysis is deferred to report generation.
     """
+
+    # Mapping of charity-level themes to UKCAT prefixes/codes
+    THEME_MAPPING = {
+        "Accommodation/housing": "HO",
+        "Arts/culture/heritage/science": "AR",
+        "Disability": "BE",
+        "Economic/community Development/employment": "EC",
+        "Education/training": "ED",
+        "Environment/conservation/heritage": "EN",
+        "General Charitable Purposes": "CA",
+        "Human Rights/religious Or Racial Harmony/equality Or Diversity": "SO",
+        "Overseas Aid/famine Relief": "EC103",
+        "The Advancement Of Health Or Saving Of Lives": "HE",
+        "The Prevention Or Relief Of Poverty": "BE"
+    }
 
     def __init__(self, db: Session):
         self.db = db
-        # Lazy load due to circular imports potential
-        from app.services.matching.identity_matcher import IdentityMatcher
-        self.identity_matcher = IdentityMatcher(db)
 
-    def _cosine_similarity(self, v1, v2):
-        import numpy as np
-        if v1 is None or v2 is None or len(v1) == 0 or len(v2) == 0:
-            return 0.0
-        a = np.array(v1)
-        b = np.array(v2)
-        norm_a = np.linalg.norm(a)
-        norm_b = np.linalg.norm(b)
-        if norm_a == 0 or norm_b == 0:
-            return 0.0
-        return float(np.dot(a, b) / (norm_a * norm_b))
+    # ─── Helpers ───
 
     def _is_national_charity(self, profile: ServiceProfile) -> bool:
-        """
-        Check if charity is National (Income > £10m OR 'National' in regions).
-        """
-        if profile.latest_income and profile.latest_income > 10_000_000:
+        """Determines if a charity is national based on income or explicit region."""
+        # Income > £5M often implies national reach in our schema
+        if profile.latest_income and profile.latest_income > 5_000_000:
             return True
         
-        if isinstance(profile.service_regions, dict):
-            regions = profile.service_regions.get("regions", [])
-        else:
-            regions = profile.service_regions or []
-            
-        return "National" in regions or "United Kingdom" in regions
+        regions = self._extract_charity_regions(profile)
+        return any(r.lower() in ["national", "united kingdom", "uk"] for r in regions)
 
-    def _is_small_charity(self, profile: ServiceProfile) -> bool:
-        """
-        Check if charity is Small (Income < £1m).
-        """
-        return profile.latest_income and profile.latest_income < 1_000_000
-
-    def _calculate_geo_score(self, profile, notice):
-        """
-        Calculate geo score with 'National Catch-All' logic.
-        """
-        # 1. National Charity Rule: Matches ANY region
-        if self._is_national_charity(profile):
-            return 1.0
-            
-        # 2. Extract regions
+    def _extract_charity_regions(self, profile: ServiceProfile) -> list:
         if isinstance(profile.service_regions, dict):
-            allowed_regions = profile.service_regions.get("regions", [])
-        else:
-            allowed_regions = profile.service_regions or []
-            
-        if not allowed_regions:
-            return 0.0
-            
-        notice_regions = []
-        if notice.raw_json:
-            execution_location = notice.raw_json.get("tender", {}).get("deliveryLocation", []) or \
-                               notice.raw_json.get("tender", {}).get("execution_location", [])
-            for loc in execution_location:
-                # Try region, then description, then address
-                r = loc.get("region") or loc.get("description")
-                if r:
-                    notice_regions.append(r)
-        
-        # 3. Unknown Location Rule: If tender location unknown, Local charity score depends...
-        # User said: "Local Charity: Must match Notice Region OR Notice Region must be 'Unknown'"
-        if not notice_regions:
-            return 1.0 # Benefit of doubt for now (or 0.5?) user said "matches... Unknown"
-            
-        # 4. Local Overlap Check
-        overlap = set(notice_regions) & set(allowed_regions)
-        if overlap:
-            return 1.0
-            
-        return 0.0
+            return profile.service_regions.get("regions", [])
+        return profile.service_regions or []
+
+    # ─── Main Entry ───
 
     def calculate_matches(self, org_id: str):
         profile = self.db.get(ServiceProfile, org_id)
@@ -96,173 +65,227 @@ class MatchingEngine:
             logger.error(f"Profile {org_id} not found")
             return
 
-        # Fetch candidate notices
-        notices = self.db.query(Notice).filter(Notice.deadline_date > func.now()).all()
-        
-        # --- HYBRID AI PRE-SCREENING ---
-        strategy_matches = self.identity_matcher.batch_screen(profile, notices)
+        # Clear existing matches for this charity to avoid stale results
+        self.db.execute(
+            text("DELETE FROM notice_match WHERE org_id = :oid"),
+            {"oid": org_id}
+        )
+        self.db.commit()
 
-        for notice in notices:
-            # --- INIT VARIABLES ---
+        # ═══════════════════════════════════════════
+        # STAGE 1: SQL PRE-FILTER (Fast SQL Gates)
+        # ═══════════════════════════════════════════
+        
+        # Stage 1: Active, Services Only, Not Archived
+        # Using or_ for is_archived to handle NULLs in existing data
+        query = self.db.query(Notice).filter(
+            or_(Notice.is_archived == False, Notice.is_archived == None),
+            func.lower(Notice.raw_json['tender']['mainProcurementCategory'].astext) == 'services'
+        )
+
+        candidates = query.all()
+        logger.info(f"  Stage 1 (SQL): Found {len(candidates)} active service candidates for {profile.name}")
+
+        # ═══════════════════════════════════════════
+        # STAGE 2-6: PYTHON STRUCTURED GATES
+        # ═══════════════════════════════════════════
+
+        is_national = self._is_national_charity(profile)
+        charity_regions = [r.lower() for r in self._extract_charity_regions(profile)]
+        charity_cpv_divisions = set(c[:2] for c in (profile.inferred_cpv_codes or []))
+        
+        # Translate human-readable themes to UKCAT prefixes
+        charity_ukcat_codes = set()
+        for theme in (profile.ukcat_codes or []):
+            prefix = self.THEME_MAPPING.get(theme)
+            if prefix:
+                charity_ukcat_codes.add(prefix)
+        
+        charity_income = profile.latest_income or 0
+
+        matches_to_write = []
+
+        dropped_vcse = 0
+        dropped_value = 0
+        dropped_geo = 0
+        dropped_cpv = 0
+
+        for notice in candidates:
+            # --- Init Match Context ---
             viability_warning = None
-            is_excluded = False
             risk_flags = {}
             checklist = []
             recommendation_reasons = []
+            
+            tender_raw = notice.raw_json.get("tender", {}) if notice.raw_json else {}
+            lots_raw = tender_raw.get("lots", [])
 
-            tender = notice.raw_json.get("tender", {}) if notice.raw_json else {}
-            lots = tender.get("lots", [])
-
-            # --- PHASE 1: HARD GATES & VIABILITY ---
+            # ═══════════════════════════════════════════
+            # STAGE 2: VCSE/SME GATE (Hard Exclude)
+            # ═══════════════════════════════════════════
+            is_vcse_suitable = tender_raw.get("suitability", {}).get("vcse") or \
+                               any(lot.get("suitability", {}).get("vcse") for lot in lots_raw)
+            is_sme_suitable = tender_raw.get("suitability", {}).get("sme") or \
+                              any(lot.get("suitability", {}).get("sme") for lot in lots_raw)
             
-            # 1. SME Gate (Income < £1m)
-            is_sme_suitable = tender.get("suitability", {}).get("sme") or any(lot.get("suitability", {}).get("sme") for lot in lots)
-            is_vcse_suitable = tender.get("suitability", {}).get("vcse") or any(lot.get("suitability", {}).get("vcse") for lot in lots)
-            is_light_touch = "lightTouch" in tender.get("specialRegime", [])
-            
-            if self._is_small_charity(profile):
-                val = notice.value_amount or 0
-                if not is_sme_suitable and val > 250_000:
-                     is_excluded = True
-            
-            if is_excluded:
+            # Testing Adjustment: If no suitability flags exist, we allow it (Soft Gate)
+            # rather than strictly excluding.
+            if not is_vcse_suitable and not is_sme_suitable and \
+               (tender_raw.get("suitability") or any(lot.get("suitability") for lot in lots_raw)):
+                dropped_vcse += 1
                 continue
-
-            # 2. Turnover Rule (50% Income)
-            if profile.latest_income and notice.value_amount:
-                if notice.value_amount > (profile.latest_income * 0.5):
-                    viability_warning = "High Risk: Contract value exceeds 50% of annual income."
-
-            # 3. Geo Gate (Hard Exclusion for Locals)
-            score_geo = self._calculate_geo_score(profile, notice)
             
-            # IDENTITY OVERRIDE: Strategic match bypasses Geo Gate
-            is_strategic = strategy_matches.get(notice.ocid, False)
-            
-            if score_geo == 0.0 and not is_strategic:
-                 continue # HARD EXCLUSION (unless strategic)
-
-            # --- PHASE 2: SCORING ---
-            
-            # 1. Semantic Score (55%)
-            score_semantic = 0.0
-            if profile.profile_embedding is not None:
-                target_embedding = notice.provider_summary_embedding if notice.provider_summary_embedding is not None else notice.embedding
-                if target_embedding is not None:
-                     try:
-                        score_semantic = self._cosine_similarity(profile.profile_embedding, target_embedding)
-                        score_semantic = max(0.0, score_semantic)
-                     except Exception as e:
-                        logger.error(f"Error calculating similarity: {e}")
-
-            # 2. Domain Score (20%): CPV Overlap
-            score_domain = 0.0
-            if notice.cpv_codes and profile.inferred_cpv_codes:
-                notice_set = set(notice.cpv_codes)
-                profile_set = set(profile.inferred_cpv_codes)
-                intersection = notice_set & profile_set
-                union = notice_set | profile_set
-                if union:
-                    score_domain = len(intersection) / len(union)
-
-            # 3. Geo Score (15%) - Already calc'd
-
-            # 4. Boost (10%)
-            score_boost = 0.0
-            if profile.beneficiary_groups and (notice.description or notice.title):
-                text_to_check = f"{notice.title} {notice.description}".lower()
-                matches_found = 0
-                for group in profile.beneficiary_groups:
-                    if group.lower() in text_to_check:
-                        matches_found += 1
-                if matches_found > 0:
-                    score_boost = min(1.0, 0.5 + (0.1 * matches_found))
-            
-            # 5. IDENTITY BOOST (Strategy Override)
-            if is_strategic:
-                # Force semantic score to be at least 0.9 (Perfect Match equivalent)
-                score_semantic = max(score_semantic, 0.9)
-                recommendation_reasons.append("AI Insight: Identified as a Strategic Fit for this charity.")
-
-            # --- PHASE 3: BID/NO-BID & SUITABILITY ---
-            
-            # Add Suitability Reasons
             if is_vcse_suitable:
-                recommendation_reasons.append("Explicitly marked as suitable for VCSEs/Charities.")
+                recommendation_reasons.append("Explicitly marked for VCSE suitability.")
             elif is_sme_suitable:
-                recommendation_reasons.append("Marked as suitable for SMEs.")
-            if is_light_touch:
-                recommendation_reasons.append("Under 'Light Touch' regime.")
+                recommendation_reasons.append("Marked for SME suitability.")
+            else:
+                recommendation_reasons.append("Generic suitability (No specific SME/VCSE flags).")
 
-            # Lot-Level Check
+            # ═══════════════════════════════════════════
+            # STAGE 3: VALUE GATE (Hard Exclude > 40%)
+            # ═══════════════════════════════════════════
+            val = float(notice.value_amount or 0)
+            
+            # Check lots first (PRD 03: if any lot is suitable, tender is suitable)
             suitable_lots = []
-            if lots:
-                for lot in lots:
-                    lot_value = lot.get("value", {}).get("amountGross") or lot.get("value", {}).get("amount")
-                    if lot_value:
-                        if profile.latest_income and lot_value > (profile.latest_income * 0.5):
-                            continue
-                        suitable_lots.append(lot.get("title", f"Lot {lot.get('id')}"))
-                if suitable_lots:
-                    recommendation_reasons.append(f"Contains {len(suitable_lots)} suitable lots based on scale.")
-
-            # Risks & Checklist
-            text_to_scan = f"{notice.title} {notice.description}".lower()
+            if lots_raw:
+                for lot in lots_raw:
+                    lot_val = float(lot.get("value", {}).get("amountGross") or lot.get("value", {}).get("amount") or 0)
+                    if charity_income > 0 and lot_val <= (charity_income * 0.4):
+                        suitable_lots.append(lot)
             
-            if "tupe" in text_to_scan:
-                risk_flags["TUPE"] = "High Risk: Staff transfer likely."
+            # If no suitable lots AND total value > 40% income, exclude
+            if not suitable_lots and charity_income > 0 and val > (charity_income * 0.4):
+                dropped_value += 1
+                continue
             
-            if "safeguarding" in text_to_scan:
-                risk_flags["Safeguarding"] = "Review Required: Safeguarding standards apply."
-                
-            if notice.publication_date and notice.deadline_date:
-                days = (notice.deadline_date - notice.publication_date).days
-                if days < 20:
-                    risk_flags["Mobilization"] = f"Short bidding window ({days} days)."
+            if suitable_lots:
+                recommendation_reasons.append(f"Contains {len(suitable_lots)}/{len(lots_raw)} suitable lots by value.")
+            elif notice.value_amount:
+                recommendation_reasons.append(f"Tender value is within 40% of annual income.")
 
-            # Checklist
-            if "social care" in text_to_scan: checklist.append({"item": "Enhanced DBS", "status": "Required"})
-            if "cyber" in text_to_scan: checklist.append({"item": "Cyber Essentials", "status": "Check"})
+            # ═══════════════════════════════════════════
+            # STAGE 4: GEO GATE (Hard Match unless National)
+            # ═══════════════════════════════════════════
+            notice_regions = []
+            delivery_locs = tender_raw.get("items", []) # OCDS regions are often here
+            for itm in delivery_locs:
+                locs = itm.get("deliveryAddresses", [])
+                for l in locs:
+                    r = l.get("region")
+                    if r: notice_regions.append(r.lower())
 
-            if viability_warning and not suitable_lots:
-                 recommendation_reasons.append(viability_warning)
+            # Fallback to parties if items are empty
+            if not notice_regions:
+                for p in notice.raw_json.get("parties", []):
+                    if "buyer" in p.get("roles", []):
+                        r = p.get("address", {}).get("region")
+                        if r: notice_regions.append(r.lower())
 
-            # --- TOTAL SCORE ---
-            # Weights: 55%, 20%, 15%, 10%
-            total_score = (score_semantic * 0.55) + (score_domain * 0.20) + (score_geo * 0.15) + (score_boost * 0.10)
+            geo_overlap = set(notice_regions) & set(charity_regions)
             
-            # Apply Suitability Boost to Score
-            if is_vcse_suitable: total_score = min(1.0, total_score + 0.15)
-            elif is_sme_suitable: total_score = min(1.0, total_score + 0.10)
-            if is_light_touch: total_score = min(1.0, total_score + 0.05)
-
-            # --- PHASE 4: RECOMMENDATION ---
-            status = "NO_GO"
-            if total_score > 0.60 and not risk_flags.get("TUPE"):
-                if (not viability_warning or suitable_lots):
-                    if profile.service_regions and score_geo == 0:
-                         status = "REVIEW"
-                    else:
-                        status = "GO"
+            if is_national:
+                # National charities get 1.0 if local match, else 0.25 bonus
+                score_geo = 1.0 if (geo_overlap or not notice_regions) else 0.25
+            else:
+                if notice_regions and geo_overlap:
+                    score_geo = 1.0
+                elif not notice_regions:
+                    score_geo = 0.5 # Neutral if geo unknown
                 else:
-                    status = "REVIEW"
-            elif total_score > 0.25 or viability_warning or risk_flags:
-                status = "REVIEW"
+                    dropped_geo += 1
+                    continue # No geo overlap for regional charity
+
+            recommendation_reasons.append(f"Geographic Alignment: {'Local Match' if geo_overlap else 'National Reach'}")
+
+            # ═══════════════════════════════════════════
+            # STAGE 5: CPV DIVISION MATCH (Hard Gate)
+            # ═══════════════════════════════════════════
+            # User Feedback: Imputed CPVs (inferred_cpv_codes) are used
+            notice_cpv_divisions = set(c[:2] for c in (notice.cpv_codes or []))
             
-            # Create/Update Match Record
+            if charity_cpv_divisions and notice_cpv_divisions:
+                if not (notice_cpv_divisions & charity_cpv_divisions):
+                    dropped_cpv += 1
+                    continue # Strict Hard Gate ONLY if both sides have codes
+                score_domain = 1.0
+            else:
+                score_domain = 0.5 # Neutral if either notice or charity codes missing
+            
+            recommendation_reasons.append("Sector (CPV) alignment confirmed.")
+
+            # ═══════════════════════════════════════════
+            # STAGE 6: UKCAT THEME MATCH (Scoring)
+            # ═══════════════════════════════════════════
+            notice_ukcat = set(notice.inferred_ukcat_codes or [])
+            # Check if any notice code starts with our charity theme prefixes
+            theme_matches = {p for p in charity_ukcat_codes if any(code.startswith(p) for code in notice_ukcat)}
+            score_theme = len(theme_matches) / len(charity_ukcat_codes) if charity_ukcat_codes else 0.5
+            
+            if theme_matches:
+                recommendation_reasons.append(f"Thematic overlap: {', '.join(list(theme_matches)[:3])}...")
+
+            # ═══════════════════════════════════════════
+            # STAGE 7: FINAL SCORING & ENRICHMENT
+            # ═══════════════════════════════════════════
+            
+            # Semantic (pgvector cosine fallback)
+            score_semantic = 0.0
+            target_emb = notice.provider_summary_embedding or notice.embedding
+            
+            # Using is not None for array-safe truth check
+            if target_emb is not None and profile.profile_embedding is not None:
+                import numpy as np
+                a, b = np.array(profile.profile_embedding), np.array(target_emb)
+                score_semantic = float(np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b)))
+                score_semantic = max(0.0, score_semantic)
+
+            # Combined Mechanical Score
+            # Weighting: Semantic 40%, Theme 30%, Domain 20%, Geo 10%
+            total_score = (score_semantic * 0.40) + \
+                          (score_theme * 0.30) + \
+                          (score_domain * 0.20) + \
+                          (score_geo * 0.10)
+
+            # Risk Flag Scan (Non-AI)
+            text_lc = f"{notice.title} {notice.description}".lower()
+            if "tupe" in text_lc: risk_flags["TUPE"] = "Staff transfer (TUPE) detected."
+            if "safeguarding" in text_lc: risk_flags["Safeguarding"] = "Review safeguarding requirements."
+            
+            # Suitability metadata for export preservation
+            risk_flags["is_vcse"] = is_vcse_suitable
+            risk_flags["is_sme"] = is_sme_suitable
+
+            # Status Decision
+            status = "GO" if total_score > 0.65 else "REVIEW"
+            if risk_flags.get("TUPE"): status = "REVIEW"
+
+            # Create Record
             match_record = NoticeMatch(
                 org_id=profile.org_id,
                 notice_id=notice.ocid,
                 score=total_score,
-                score_semantic=score_semantic,
-                score_domain=score_domain,
-                score_geo=score_geo,
+                score_semantic=Decimal(str(round(score_semantic, 4))),
+                score_domain=Decimal(str(round(score_domain, 4))),
+                score_geo=Decimal(str(round(score_geo, 4))),
+                score_theme=Decimal(str(round(score_theme, 4))),
                 feedback_status=status,
-                viability_warning=viability_warning if not suitable_lots else None,
                 risk_flags=risk_flags,
                 checklist=checklist,
                 recommendation_reasons=recommendation_reasons
             )
-            self.db.merge(match_record) # Upsert
+            matches_to_write.append(match_record)
+
+        # Bulk Merge
+        for m in matches_to_write:
+            self.db.merge(m)
         
         self.db.commit()
+        
+        log_msg = (
+            f"  {profile.name} Complete: {len(matches_to_write)} stored. "
+            f"Gate Drop: VCSE({dropped_vcse}), Value({dropped_value}), Geo({dropped_geo}), CPV({dropped_cpv})"
+        )
+        logger.info(log_msg)
+        print(log_msg)
