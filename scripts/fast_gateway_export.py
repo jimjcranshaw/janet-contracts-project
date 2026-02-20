@@ -49,6 +49,8 @@ def run_fast_match():
                 "Geo Score": float(m.score_geo) if m.score_geo else 0.0,
                 "Notice CPV Codes": ", ".join(n.cpv_codes or []),
                 "Charity CPV codes": ", ".join(charity.inferred_cpv_codes or []),
+                "Tier 2 Verdict": m.deep_verdict or "PENDING",
+                "Tier 2 Rationale": m.deep_rationale or "",
                 "SME Suitable": flags.get("is_sme", "N/A"),
                 "VCSE Suitable": flags.get("is_vcse", "N/A"),
                 "Decision": m.feedback_status,
@@ -63,7 +65,13 @@ def run_fast_match():
         df = pd.DataFrame(all_data)
         df = df.sort_values(by=["Charity Name", "Overall Score"], ascending=[True, False])
         
-        output_file = "fast_gateway_results_v4.xlsx"
+        # New: Filter to top 50 matches (Tier 1) vs Deep Matches (Tier 2)
+        # For now, we export everything but label them.
+        output_file = "fast_gateway_results_v12.xlsx"
+        
+        # Force refresh of session objects to see fresh DB state
+        db.expire_all()
+        
         df.to_excel(output_file, index=False)
         print(f"\n--- Export Complete: {output_file} ({len(all_data)} rows) ---")
     else:

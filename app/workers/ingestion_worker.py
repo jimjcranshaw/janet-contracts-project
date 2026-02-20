@@ -1,17 +1,14 @@
 import logging
 from datetime import datetime
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from app.database import SessionLocal
-from app.models import Notice, Buyer, IngestionLog
+from app.models import Notice, Buyer, IngestionLog, ServiceProfile
 from app.services.ingestion.clients.fts_client import FTSClient
 from app.services.ingestion.normalizer import Normalizer
-from app.services.ingestion.embeddings import EmbeddingService
-
+from app.services.ingestion.enrichment_service import EnrichmentService
 from app.services.alerts.alert_service import AlertService
-from app.services.documents.document_service import DocumentService
-from app.services.matching.requirement_service import RequirementService
-from app.services.matching.ukcat_tagger import tagger as ukcat_tagger
 
 logger = logging.getLogger(__name__)
 
@@ -19,14 +16,44 @@ class IngestionWorker:
     def __init__(self):
         self.fts_client = FTSClient()
         self.normalizer = Normalizer()
-        self.embeddings = EmbeddingService()
-        self.alerts = AlertService(SessionLocal())
-        self.documents = DocumentService()
-        self.requirements = RequirementService(SessionLocal())
-        self.ukcat_tagger = ukcat_tagger
+        self._mesh = None
+
+    def _get_mesh(self, db: Session):
+        """Builds a cached Global Interest Mesh from all charity profiles."""
+        if self._mesh is not None:
+            return self._mesh
+            
+        profiles = db.query(ServiceProfile).all()
+        cpv_pool = set()
+        for p in profiles:
+            if p.inferred_cpv_codes:
+                cpv_pool.update(c[:4] for c in p.inferred_cpv_codes)
+        
+        self._mesh = {
+            "cpv_prefixes": cpv_pool
+        }
+        logger.info(f"Global Interest Mesh built with {len(cpv_pool)} CPV prefixes.")
+        return self._mesh
+
+    def _is_mesh_match(self, db: Session, notice: Notice) -> bool:
+        """Checks if a notice matches the global interest criteria."""
+        mesh = self._get_mesh(db)
+        
+        # 1. CPV Check (Strictest filter)
+        if not notice.cpv_codes:
+            return True # Neutral fallback
+            
+        notice_prefixes = set(c[:4] for c in notice.cpv_codes)
+        if notice_prefixes & mesh["cpv_prefixes"]:
+            return True
+            
+        return False
 
     def run(self, limit=None, start_date=None):
         db = SessionLocal()
+        enrichment_service = EnrichmentService(db)
+        alert_service = AlertService(db)
+        
         log_entry = IngestionLog(source="FTS", status="RUNNING")
         db.add(log_entry)
         db.commit()
@@ -50,32 +77,29 @@ class IngestionWorker:
                     # Fetch buyer ID
                     buyer = db.query(Buyer).filter(Buyer.slug == buyer_data['slug']).first()
                     
-                    # 2. Process Notice
+                    # 2. Process Notice (Metadata Only)
                     notice = self.normalizer.map_release_to_notice(release, buyer.id)
                     
-                    # Generate UKCAT tags
-                    text_to_tag = f"{notice.title} {notice.description or ''}"
-                    notice.inferred_ukcat_codes = self.ukcat_tagger.tag_text(text_to_tag)
+                    # --- NEW: Lazy Enrichment Check ---
+                    if self._is_mesh_match(db, notice):
+                        logger.info(f"Mesh Match! Triggering enrichment for {notice.ocid}")
+                        enrichment_service.enrich_notice(notice)
+                    else:
+                        logger.debug(f"Selective Ingestion: Skipping enrichment for {notice.ocid}")
                     
-                    # Generate embedding for description
-                    if notice.description:
-                        try:
-                            notice.embedding = self.embeddings.get_embedding(notice.description)
-                        except Exception as emb_e:
-                            logger.error(f"Failed to generate embedding for notice {notice.ocid}: {emb_e}")
-
                     # --- PRD 04: Detect Material Changes ---
                     existing_notice = db.query(Notice).filter(Notice.ocid == notice.ocid).first()
                     if existing_notice:
-                        changes = self.alerts.check_for_changes(existing_notice, {
+                        changes = alert_service.check_for_changes(existing_notice, {
                             "deadline_date": notice.deadline_date,
                             "value_amount": notice.value_amount,
                             "notice_type": notice.notice_type
                         })
                         if changes:
                             logger.info(f"Material change detected in notice {notice.ocid}: {changes}")
-                            self.alerts.process_change(notice.ocid, changes)
+                            alert_service.process_change(notice.ocid, changes)
 
+                    # 3. Upsert Notice
                     notice_data = {c.name: getattr(notice, c.name) for c in notice.__table__.columns}
                     
                     stmt = insert(Notice).values(**notice_data).on_conflict_do_update(
@@ -94,16 +118,6 @@ class IngestionWorker:
                     db.execute(stmt)
                     db.commit() # Commit each record
                     
-                    # --- PRD 07: Process Tender Documents (RAG) ---
-                    if notice.source_url:
-                        try:
-                            logger.info(f"Processing tender documents for {notice.ocid}")
-                            text = self.documents.fetch_and_extract_text(notice.source_url)
-                            if text:
-                                self.requirements.extract_requirements(notice.ocid, text)
-                        except Exception as doc_e:
-                            logger.error(f"Failed RAG processing for {notice.ocid}: {doc_e}")
-
                     count += 1
                     
                     if limit and count >= limit:
@@ -125,10 +139,7 @@ class IngestionWorker:
             db.rollback()
             log_entry.status = "FAILED"
             log_entry.error_details = str(e)
-            try:
-                db.commit()
-            except:
-                pass
+            db.commit()
         finally:
             db.close()
 

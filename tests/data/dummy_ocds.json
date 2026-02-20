@@ -1,0 +1,83 @@
+{
+    "version": "1.1",
+    "uri": "http://example.com/ocds/1",
+    "publishedDate": "2024-01-01T00:00:00Z",
+    "publisher": {
+        "name": "Test Publisher"
+    },
+    "releases": [
+        {
+            "ocid": "ocds-test-1",
+            "id": "rel-1",
+            "date": "2024-01-01T10:00:00Z",
+            "tag": [
+                "tender"
+            ],
+            "buyer": {
+                "name": "Department of Health"
+            },
+            "tender": {
+                "id": "t-1",
+                "title": "Mental Health Support Services 2024",
+                "description": "A contract for support services.",
+                "status": "active",
+                "procurementMethod": "open",
+                "value": {
+                    "amount": 150000,
+                    "currency": "GBP"
+                },
+                "items": [
+                    {
+                        "id": "1",
+                        "classification": {
+                            "id": "85100000",
+                            "scheme": "CPV"
+                        }
+                    }
+                ],
+                "tenderPeriod": {
+                    "startDate": "2024-02-01T00:00:00Z",
+                    "endDate": "2024-05-01T00:00:00Z"
+                }
+            }
+        },
+        {
+            "ocid": "ocds-test-2",
+            "id": "rel-2",
+            "date": "2024-01-02T10:00:00Z",
+            "tag": [
+                "award"
+            ],
+            "buyer": {
+                "name": "Barrow Council"
+            },
+            "tender": {
+                "id": "t-2",
+                "title": "Community Cleaning Services",
+                "description": "Cleaning services for community centers.",
+                "items": [
+                    {
+                        "id": "1",
+                        "classification": {
+                            "id": "90911200",
+                            "scheme": "CPV"
+                        }
+                    }
+                ]
+            },
+            "awards": [
+                {
+                    "id": "a-1",
+                    "value": {
+                        "amount": 25000,
+                        "currency": "GBP"
+                    },
+                    "contractPeriod": {
+                        "startDate": "2024-03-01T00:00:00Z",
+                        "endDate": "2026-03-01T00:00:00Z"
+                    }
+                }
+            ]
+        }
+    ]
+}

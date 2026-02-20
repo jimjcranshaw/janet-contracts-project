@@ -93,6 +93,7 @@ class ServiceProfile(Base):
     
     # Inferred Procurement Data (Auto-Tagging)
     inferred_cpv_codes = Column(ARRAY(Text)) 
+    exclusion_keywords = Column(ARRAY(Text)) # New: Hard exclusion list
 
     # Contract Gates
     service_regions = Column(JSONB)

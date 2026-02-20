@@ -65,12 +65,11 @@ class MatchingEngine:
             logger.error(f"Profile {org_id} not found")
             return
 
-        # Clear existing matches for this charity to avoid stale results
-        self.db.execute(
-            text("DELETE FROM notice_match WHERE org_id = :oid"),
-            {"oid": org_id}
-        )
-        self.db.commit()
+        # Fetch existing matches for this charity to manage manually
+        # This replaces the destructive DELETE and ensures we preserve Deep Review data
+        existing_matches = {
+            m.notice_id: m for m in self.db.query(NoticeMatch).filter(NoticeMatch.org_id == org_id).all()
+        }
 
         # ═══════════════════════════════════════════
         # STAGE 1: SQL PRE-FILTER (Fast SQL Gates)
@@ -92,7 +91,8 @@ class MatchingEngine:
 
         is_national = self._is_national_charity(profile)
         charity_regions = [r.lower() for r in self._extract_charity_regions(profile)]
-        charity_cpv_divisions = set(c[:2] for c in (profile.inferred_cpv_codes or []))
+        charity_cpv_prefixes = set(c[:4] for c in (profile.inferred_cpv_codes or []))
+        exclusion_kws = [kw.lower() for kw in (profile.exclusion_keywords or [])]
         
         # Translate human-readable themes to UKCAT prefixes
         charity_ukcat_codes = set()
@@ -109,6 +109,7 @@ class MatchingEngine:
         dropped_value = 0
         dropped_geo = 0
         dropped_cpv = 0
+        dropped_exclusion = 0
 
         for notice in candidates:
             # --- Init Match Context ---
@@ -200,20 +201,30 @@ class MatchingEngine:
             recommendation_reasons.append(f"Geographic Alignment: {'Local Match' if geo_overlap else 'National Reach'}")
 
             # ═══════════════════════════════════════════
-            # STAGE 5: CPV DIVISION MATCH (Hard Gate)
+            # STAGE 5: CPV PREFIX MATCH (Hard Gate)
             # ═══════════════════════════════════════════
-            # User Feedback: Imputed CPVs (inferred_cpv_codes) are used
-            notice_cpv_divisions = set(c[:2] for c in (notice.cpv_codes or []))
+            # Tier 2 Logic: Use 4-digit prefixes for better precision
+            notice_cpv_prefixes = set(c[:4] for c in (notice.cpv_codes or []))
             
-            if charity_cpv_divisions and notice_cpv_divisions:
-                if not (notice_cpv_divisions & charity_cpv_divisions):
+            if charity_cpv_prefixes and notice_cpv_prefixes:
+                if not (notice_cpv_prefixes & charity_cpv_prefixes):
                     dropped_cpv += 1
-                    continue # Strict Hard Gate ONLY if both sides have codes
+                    continue 
                 score_domain = 1.0
             else:
-                score_domain = 0.5 # Neutral if either notice or charity codes missing
+                score_domain = 0.5 
             
-            recommendation_reasons.append("Sector (CPV) alignment confirmed.")
+            recommendation_reasons.append("Sector (CPV) alignment confirmed at prefix level.")
+
+            # ═══════════════════════════════════════════
+            # NEW STAGE: EXCLUSION KEYWORDS (Hard Gate)
+            # ═══════════════════════════════════════════
+            if exclusion_kws:
+                content = f"{notice.title} {notice.description}".lower()
+                matched_exclusions = [kw for kw in exclusion_kws if kw in content]
+                if matched_exclusions:
+                    dropped_exclusion += 1
+                    continue
 
             # ═══════════════════════════════════════════
             # STAGE 6: UKCAT THEME MATCH (Scoring)
@@ -258,8 +269,19 @@ class MatchingEngine:
             risk_flags["is_sme"] = is_sme_suitable
 
             # Status Decision
+            # Tier 2 Override: If we have an existing Deep Verdict, it rules.
+            existing = existing_matches.get(notice.ocid)
+            deep_verdict = existing.deep_verdict if existing else None
+            
             status = "GO" if total_score > 0.65 else "REVIEW"
             if risk_flags.get("TUPE"): status = "REVIEW"
+            
+            if deep_verdict == "PASS":
+                status = "GO"
+                recommendation_reasons.append("Status forced to GO via Tier 2 PASS verdict.")
+            elif deep_verdict == "FAIL":
+                status = "NO-GO"
+                recommendation_reasons.append("Status forced to NO-GO via Tier 2 FAIL verdict.")
 
             # Create Record
             match_record = NoticeMatch(
@@ -277,15 +299,36 @@ class MatchingEngine:
             )
             matches_to_write.append(match_record)
 
-        # Bulk Merge
+        # Bulk Merge with preservation of enrichment metadata
+        processed_ocids = {m.notice_id for m in matches_to_write}
+        
         for m in matches_to_write:
-            self.db.merge(m)
+            # Check if we already have a record for this (preserved in memory at start)
+            existing = existing_matches.get(m.notice_id)
+            
+            if existing:
+                # Surgically update only the mechanical fields
+                existing.score = m.score
+                existing.score_semantic = m.score_semantic
+                existing.score_domain = m.score_domain
+                existing.score_geo = m.score_geo
+                existing.score_theme = m.score_theme
+                existing.feedback_status = m.feedback_status
+                existing.risk_flags = m.risk_flags
+                existing.checklist = m.checklist
+                existing.recommendation_reasons = m.recommendation_reasons
+                # deep_verdict and deep_rationale remain untouched
+            else:
+                self.db.add(m)
+        
+        # Clean up stale matches (no longer passing gates)
+        # BUT: Preserve them if they have a Deep Verdict!
+        for ocid, em in existing_matches.items():
+            if ocid not in processed_ocids and em.deep_verdict is None:
+                self.db.delete(em)
         
         self.db.commit()
         
-        log_msg = (
-            f"  {profile.name} Complete: {len(matches_to_write)} stored. "
-            f"Gate Drop: VCSE({dropped_vcse}), Value({dropped_value}), Geo({dropped_geo}), CPV({dropped_cpv})"
-        )
+        log_msg = f"  {profile.name} Complete: {len(matches_to_write)} matches processed."
         logger.info(log_msg)
         print(log_msg)

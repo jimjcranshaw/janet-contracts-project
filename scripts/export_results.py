@@ -50,6 +50,8 @@ def export_results():
                 "Geo Score": float(m.score_geo) if m.score_geo else 0.0,
                 "Notice CPV Codes": ", ".join(n.cpv_codes or []),
                 "Charity CPV codes": ", ".join(charity.inferred_cpv_codes or []),
+                "Tier 2 Verdict": m.deep_verdict or "PENDING",
+                "Tier 2 Rationale": m.deep_rationale or "",
                 "SME Suitable": flags.get("is_sme", "N/A"),
                 "VCSE Suitable": flags.get("is_vcse", "N/A"),
                 "Decision": m.feedback_status,
@@ -66,7 +68,7 @@ def export_results():
         df = df.sort_values(by=["Charity Name", "Overall Score"], ascending=[True, False])
     
     # Save to Excel
-    output_file = "matching_results_v2.xlsx"
+    output_file = "matching_results_v3.xlsx"
     df.to_excel(output_file, index=False)
     print(f"--- Export Complete: {output_file} ({len(all_data)} rows) ---")
     

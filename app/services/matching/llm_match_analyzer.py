@@ -44,6 +44,54 @@ class LLMMatchAnalyzer:
             
         self.client = openai.Client(api_key=self.api_key, base_url=self.base_url)
 
+    def batch_analyze_matches(self, org_id: str, notice_ocids: list[str]) -> Dict[str, Any]:
+        """
+        Analyse multiple matches in a single batched LLM call for cost/speed optimization.
+        Evaluates up to 10 candidates.
+        """
+        profile = self.db.get(ServiceProfile, org_id)
+        notices = self.db.query(Notice).filter(Notice.ocid.in_(notice_ocids)).all()
+        
+        if not profile or not notices:
+            return {}
+
+        charity_evidence = self._build_charity_summary(profile)
+        tenders_section = ""
+        for i, n in enumerate(notices):
+            tenders_section += f"\n--- TENDER #{i+1} (OCID: {n.ocid}) ---\n{self._build_tender_summary(n)}\n"
+
+        prompt = f"""You are an expert procurement advisor for UK charities.
+Analyse which of the following {len(notices)} tenders are the BEST fit for this charity to bid for.
+
+CHARITY PROFILE:
+{charity_evidence}
+
+{tenders_section}
+
+For EACH tender, provide a PASS or FAIL verdict and a 1-sentence rationale.
+A "PASS" means the charity has strong evidence of being able to deliver the service and it is a good strategic fit.
+A "FAIL" means there is a significant mismatch in domain, scale, or requirements.
+
+Respond ONLY with a JSON object where keys are OCIDs and values are:
+{{
+  "verdict": "PASS" | "FAIL",
+  "rationale": "Direct explanation of why it passed or failed"
+}}
+"""
+
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"},
+                temperature=0.1,
+            )
+            return json.loads(response.choices[0].message.content)
+
+        except Exception as e:
+            logger.error(f"Batched LLM analysis failed for {org_id}: {e}")
+            return {}
+
     def analyze_match(self, org_id, notice_ocid: str, mechanical_scores: dict = None) -> Dict[str, Any]:
         """
         Analyse the fit between a charity and a tender using LLM reasoning.
