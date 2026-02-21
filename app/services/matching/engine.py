@@ -4,6 +4,7 @@ from sqlalchemy import select, and_, func, or_, text, cast, Numeric
 from sqlalchemy.orm import Session
 from app.models import Notice, ServiceProfile, NoticeMatch
 from .ukcat_tagger import tagger
+from .renewal_enrichment import RenewalEnrichmentService
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +41,7 @@ class MatchingEngine:
 
     def __init__(self, db: Session):
         self.db = db
+        self.radar_service = RenewalEnrichmentService(db)
 
     # ─── Helpers ───
 
@@ -267,6 +269,11 @@ class MatchingEngine:
             # Suitability metadata for export preservation
             risk_flags["is_vcse"] = is_vcse_suitable
             risk_flags["is_sme"] = is_sme_suitable
+
+            radar_data = self.radar_service.enrich(notice)
+            if radar_data["buyer_seen_before"]:
+                risk_flags["renewal_radar"] = radar_data
+                recommendation_reasons.append("Historical data found for this buyer/sector - strategy enriched.")
 
             # Status Decision
             # Tier 2 Override: If we have an existing Deep Verdict, it rules.

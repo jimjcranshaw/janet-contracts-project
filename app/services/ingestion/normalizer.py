@@ -61,6 +61,27 @@ class Normalizer:
             try: contract_end = datetime.fromisoformat(cp.get('endDate').replace('Z', '+00:00'))
             except: pass
 
+        # Extract CPVs (Enhanced for Contracts Finder + FTS)
+        cpv_codes = []
+        
+        # 1. Standard OCDS / FTS Path (Items)
+        items = tender.get('items', [])
+        for item in items:
+            cid = item.get('classification', {}).get('id')
+            if cid and cid not in cpv_codes:
+                cpv_codes.append(cid)
+                
+        # 2. Contracts Finder Path (Top-level Classification)
+        main_class = tender.get('classification', {}).get('id')
+        if main_class and main_class not in cpv_codes:
+            cpv_codes.append(main_class)
+            
+        additional = tender.get('additionalClassifications', [])
+        for ac in additional:
+            aid = ac.get('id')
+            if aid and aid not in cpv_codes:
+                cpv_codes.append(aid)
+
         # Create Notice
         return Notice(
             ocid=release.get('ocid'),
@@ -76,7 +97,7 @@ class Normalizer:
             notice_type=release.get('tag', ['contractNotice'])[0], # Default to first tag
             raw_json=release,
             source_url=tender.get('documents', [{}])[0].get('url'), # Approximate
-            cpv_codes=[item.get('classification', {}).get('id') for item in tender.get('items', []) if item.get('classification')],
+            cpv_codes=cpv_codes,
             contract_period_start=contract_start,
             contract_period_end=contract_end,
             updated_at=datetime.utcnow()

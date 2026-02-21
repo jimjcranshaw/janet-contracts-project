@@ -58,7 +58,12 @@ def export_results():
                 "Viability Warning": m.viability_warning,
                 "Risk Flags": ", ".join(k for k in flags.keys() if not k.startswith("is_")) if flags else "",
                 "Recommendation Details": "; ".join(m.recommendation_reasons or []),
-                "Checklist Items": len(m.checklist or [])
+                "Checklist Items": len(m.checklist or []),
+                # Renewal Radar
+                "Incumbent": flags.get("renewal_radar", {}).get("incumbent", "N/A"),
+                "Last Award Date": flags.get("renewal_radar", {}).get("last_awarded_date", "N/A"),
+                "Est. Cycle (Years)": flags.get("renewal_radar", {}).get("estimated_cycle_years", "N/A"),
+                "Re-tender Status": flags.get("renewal_radar", {}).get("radar_summary", "N/A")
             }
             all_data.append(row)
 

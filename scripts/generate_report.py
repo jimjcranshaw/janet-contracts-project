@@ -210,6 +210,26 @@ def generate_report():
                     recp.add_run("Recommendation: ").bold = True
                     recp.add_run(rec).italic = True
                 
+                # Renewal Radar / Strategic Coach
+                radar = m.risk_flags.get("renewal_radar") if m.risk_flags else None
+                if radar:
+                    doc.add_paragraph()
+                    radar_p = doc.add_paragraph()
+                    radar_p.add_run("Strategic Renewal Radar").bold = True
+                    radar_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
+                    
+                    summary = radar.get("radar_summary", "")
+                    if summary:
+                        doc.add_paragraph(summary, style='List Bullet')
+                    
+                    # Add strategic timeline advice
+                    incumbent = radar.get("incumbent")
+                    cycle = radar.get("estimated_cycle_years") or 3
+                    
+                    if incumbent:
+                        advice = f"Strategy: Engage with {n.buyer.canonical_name if n.buyer else 'buyer'} to understand their relationship with {incumbent}. Build evidence on where you outperform this incumbent."
+                        doc.add_paragraph(advice, style='List Bullet')
+                
                 # Viability warning
                 if m.viability_warning:
                     wp = doc.add_paragraph()
